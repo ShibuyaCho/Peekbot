@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Outreach Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black: #0a0a0a; --dark: #141414; --card: #1c1c1c;
+  --border: rgba(255,255,255,0.08); --muted: rgba(255,255,255,0.38);
+  --text: rgba(255,255,255,0.85); --accent: #7c6af7;
+  --green: #4ade80; --red: #f87171; --orange: #f97316;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--text); min-height: 100vh; }
+
+/* LOGIN */
+#loginView { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.login-card { background: var(--dark); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; width: 360px; }
+.login-card h1 { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; color: white; margin-bottom: .3rem; }
+.login-card p { font-size: .82rem; color: var(--muted); margin-bottom: 1.75rem; }
+.field { margin-bottom: 1rem; }
+.field label { font-size: .72rem; color: var(--muted); display: block; margin-bottom: .3rem; }
+.field input { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: .6rem .85rem; color: white; font-family: 'DM Sans', sans-serif; font-size: .85rem; outline: none; }
+.field input:focus { border-color: var(--accent); }
+.err { font-size: .78rem; color: var(--red); margin-top: .5rem; }
+
+/* MAIN */
+#mainView { display: none; }
+nav { background: var(--dark); border-bottom: 1px solid var(--border); padding: .85rem 1.5rem; display: flex; align-items: center; gap: 1.5rem; }
+.nav-brand { font-family: 'Syne', sans-serif; font-weight: 800; color: white; font-size: 1rem; margin-right: 1rem; }
+.nav-brand span { color: var(--accent); }
+.nav-tab { padding: .4rem .85rem; border-radius: 6px; font-size: .8rem; cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; background: transparent; color: var(--muted); transition: all .2s; }
+.nav-tab:hover, .nav-tab.active { background: var(--card); color: white; }
+.nav-right { margin-left: auto; display: flex; gap: .75rem; align-items: center; }
+.stat-pill { padding: .25rem .75rem; border-radius: 20px; font-size: .72rem; font-weight: 500; }
+.pill-pending { background: rgba(249,115,22,0.15); color: var(--orange); }
+.pill-sent { background: rgba(74,222,128,0.15); color: var(--green); }
+.pill-followup { background: rgba(124,106,247,0.15); color: var(--accent); }
+
+.page { display: none; padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+.page.active { display: block; }
+
+/* SEARCH PANEL */
+.search-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+.search-panel h3 { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 700; color: white; margin-bottom: 1.25rem; }
+.search-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: .75rem; align-items: end; }
+.s-field label { font-size: .72rem; color: var(--muted); display: block; margin-bottom: .3rem; }
+.s-field select, .s-field input { width: 100%; background: var(--dark); border: 1px solid var(--border); border-radius: 8px; padding: .55rem .75rem; color: white; font-family: 'DM Sans', sans-serif; font-size: .82rem; outline: none; }
+.s-field select:focus, .s-field input:focus { border-color: var(--accent); }
+
+/* BUTTONS */
+.btn { padding: .55rem 1.1rem; border-radius: 8px; font-size: .8rem; font-weight: 500; cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; transition: all .2s; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: #6b5ce7; }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn-green { background: rgba(74,222,128,0.15); color: var(--green); border: 1px solid rgba(74,222,128,0.25); }
+.btn-green:hover { background: var(--green); color: #000; }
+.btn-red { background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+.btn-red:hover { background: var(--red); color: white; }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { color: white; }
+.btn-sm { padding: .35rem .7rem; font-size: .72rem; border-radius: 6px; }
+
+/* PROSPECT CARDS */
+.prospects-list { display: flex; flex-direction: column; gap: 1rem; }
+.prospect-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+.prospect-card.no-email { border-color: rgba(248,113,113,0.2); }
+.pc-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.pc-name { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; color: white; }
+.pc-url { font-size: .75rem; color: var(--accent); text-decoration: none; }
+.pc-url:hover { text-decoration: underline; }
+.pc-desc { font-size: .78rem; color: var(--muted); line-height: 1.6; margin-bottom: .75rem; }
+.pc-email-row { display: flex; gap: .5rem; align-items: center; margin-bottom: 1rem; }
+.pc-email-row input { flex: 1; background: var(--dark); border: 1px solid var(--border); border-radius: 6px; padding: .4rem .7rem; color: white; font-size: .8rem; outline: none; font-family: 'DM Sans', sans-serif; }
+.pc-email-row input:focus { border-color: var(--accent); }
+.pc-email-row input::placeholder { color: var(--muted); }
+.pc-draft { background: var(--dark); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+.pc-draft-subject { font-size: .8rem; font-weight: 600; color: white; margin-bottom: .5rem; display: flex; gap: .5rem; align-items: center; }
+.pc-draft-subject input { flex: 1; background: transparent; border: none; color: white; font-size: .8rem; font-weight: 600; outline: none; font-family: 'DM Sans', sans-serif; }
+.pc-draft-body { font-size: .78rem; color: var(--text); line-height: 1.65; white-space: pre-wrap; }
+.pc-draft-body textarea { width: 100%; background: transparent; border: none; color: var(--text); font-size: .78rem; line-height: 1.65; outline: none; resize: vertical; min-height: 180px; font-family: 'DM Sans', sans-serif; }
+.pc-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.campaign-badge { padding: .2rem .6rem; border-radius: 20px; font-size: .65rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.badge-peekbot { background: rgba(124,106,247,0.15); color: var(--accent); }
+.badge-services { background: rgba(249,115,22,0.15); color: var(--orange); }
+.badge-partner { background: rgba(74,222,128,0.15); color: var(--green); }
+.no-email-warn { font-size: .72rem; color: var(--red); padding: .3rem .6rem; background: rgba(248,113,113,0.08); border-radius: 6px; border: 1px solid rgba(248,113,113,0.2); }
+
+/* SENT TABLE */
+.sent-table { width: 100%; border-collapse: collapse; }
+.sent-table th { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; padding: .6rem .75rem; text-align: left; border-bottom: 1px solid var(--border); }
+.sent-table td { font-size: .8rem; color: var(--text); padding: .65rem .75rem; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: top; }
+.sent-table tr:hover td { background: rgba(255,255,255,0.02); }
+.followup-due { color: var(--orange); font-weight: 500; }
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; text-align: center; }
+.stat-card .num { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: white; }
+.stat-card .label { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-top: .2rem; }
+
+/* LOADING */
+.loading { text-align: center; padding: 3rem; color: var(--muted); font-size: .85rem; }
+.spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: .5rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* TOAST */
+.toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--card); border: 1px solid var(--border); color: white; padding: .65rem 1.25rem; border-radius: 10px; font-size: .82rem; transition: transform .3s; z-index: 9999; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 768px) {
+  .search-grid { grid-template-columns: 1fr 1fr; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginView">
+  <div class="login-card">
+    <h1>Outreach<span style="color:var(--accent);">.</span></h1>
+    <p>AI-powered prospect finder & email manager</p>
+    <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com" /></div>
+    <div class="field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••" onkeypress="if(event.key==='Enter')doLogin()" /></div>
+    <div class="err" id="loginErr"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="doLogin()">Sign In →</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="mainView">
+  <nav>
+    <div class="nav-brand">Outreach<span>.</span></div>
+    <button class="nav-tab active" onclick="showTab('prospects')">Prospects</button>
+    <button class="nav-tab" onclick="showTab('sent')">Sent</button>
+    <button class="nav-tab" onclick="showTab('search')">Find Prospects</button>
+    <div class="nav-right">
+      <span class="stat-pill pill-pending" id="navPending">0 pending</span>
+      <span class="stat-pill pill-sent" id="navSent">0 sent</span>
+      <span class="stat-pill pill-followup" id="navFollowup" style="display:none">0 follow-ups due</span>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Log out</button>
+    </div>
+  </nav>
+
+  <!-- PROSPECTS PAGE -->
+  <div class="page active" id="page-prospects">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <div>
+        <h2 style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:white;">Pending Prospects</h2>
+        <p style="font-size:.8rem;color:var(--muted);margin-top:.2rem;">Review and approve emails before they send</p>
+      </div>
+      <div style="display:flex;gap:.5rem;">
+        <select id="filterCampaign" onchange="loadProspects()" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.45rem .75rem;color:white;font-size:.8rem;outline:none;">
+          <option value="pending">Pending</option>
+          <option value="sent">Sent</option>
+          <option value="skipped">Skipped</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="loadProspects()">Refresh</button>
+      </div>
+    </div>
+    <div id="prospectsContainer"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- SENT PAGE -->
+  <div class="page" id="page-sent">
+    <h2 style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:white;margin-bottom:1.25rem;">Sent Emails</h2>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:auto;">
+      <div id="sentContainer"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- SEARCH PAGE -->
+  <div class="page" id="page-search">
+    <h2 style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:white;margin-bottom:1.25rem;">Find New Prospects</h2>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card"><div class="num" id="sTot">—</div><div class="label">Total Found</div></div>
+      <div class="stat-card"><div class="num" id="sPend">—</div><div class="label">Pending Review</div></div>
+      <div class="stat-card"><div class="num" id="sSent">—</div><div class="label">Emails Sent</div></div>
+      <div class="stat-card"><div class="num" id="sSkip">—</div><div class="label">Skipped</div></div>
+      <div class="stat-card"><div class="num" id="sFollow" style="color:var(--orange);">—</div><div class="label">Follow-ups Due</div></div>
+    </div>
+
+    <div class="search-panel">
+      <h3>🔍 Search for Prospects</h3>
+      <div class="search-grid">
+        <div class="s-field">
+          <label>Business Type</label>
+          <select id="sVertical">
+            <option value="med_spa">Med Spas</option>
+            <option value="dental">Dental Offices</option>
+            <option value="hvac">HVAC Companies</option>
+            <option value="law_firm">Law Firms</option>
+            <option value="web_designer">Web Designers</option>
+            <option value="chiropractic">Chiropractors</option>
+            <option value="real_estate">Real Estate Agents</option>
+            <option value="salon">Hair Salons</option>
+            <option value="plumbing">Plumbing Companies</option>
+            <option value="custom">Custom Query</option>
+          </select>
+        </div>
+        <div class="s-field">
+          <label>Campaign</label>
+          <select id="sCampaign">
+            <option value="peekbot">Peekbot — AI Chat Widget</option>
+            <option value="services">Web Design Services</option>
+            <option value="partner">Partner / Referral Program</option>
+          </select>
+        </div>
+        <div class="s-field">
+          <label>Region</label>
+          <input type="text" id="sRegion" value="Portland Oregon" placeholder="Portland Oregon" />
+        </div>
+        <div class="s-field" id="customQueryWrap" style="display:none;">
+          <label>Custom Search Query</label>
+          <input type="text" id="sCustom" placeholder="e.g. yoga studio Seattle" />
+        </div>
+        <div class="s-field">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" id="searchBtn" onclick="runSearch()" style="width:100%;padding:.57rem;">
+            Find Prospects →
+          </button>
+        </div>
+      </div>
+      <div id="searchResult" style="margin-top:.75rem;font-size:.8rem;color:var(--muted);"></div>
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
+      <h3 style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:white;margin-bottom:.75rem;">How it works</h3>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;">
+        ${['🔍 Bot searches Brave for businesses matching your criteria',
+           '🌐 Visits each website to find email addresses and owner info',
+           '✍️ GPT writes a personalized email for each prospect',
+           '👀 You review and approve before anything sends'].map((s,i) => `
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.6;">
+          <div style="font-size:1.2rem;margin-bottom:.4rem;">${s.split(' ')[0]}</div>
+          ${s.split(' ').slice(1).join(' ')}
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/admin/api';
+
+// ── AUTH ──
+async function doLogin() {
+  const username = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginErr');
+  err.textContent = '';
+  const res = await fetch('/admin/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+  const data = await res.json();
+  if (data.error) { err.textContent = data.error; return; }
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('mainView').style.display = 'block';
+  init();
+}
+
+async function doLogout() {
+  await fetch('/admin/logout', {method:'POST'});
+  location.reload();
+}
+
+async function checkAuth() {
+  const res = await fetch('/admin/check');
+  const data = await res.json();
+  if (data.authed) {
+    document.getElementById('loginView').style.display = 'none';
+    document.getElementById('mainView').style.display = 'block';
+    init();
+  }
+}
+
+function init() {
+  loadStats();
+  loadProspects();
+  document.getElementById('sVertical').addEventListener('change', function() {
+    document.getElementById('customQueryWrap').style.display = this.value === 'custom' ? 'block' : 'none';
+  });
+}
+
+// ── TABS ──
+function showTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'sent') loadSent();
+  if (tab === 'search') loadStats();
+}
+
+// ── STATS ──
+async function loadStats() {
+  const res = await fetch(API + '/stats');
+  const s = await res.json();
+  document.getElementById('sTot').textContent = s.total;
+  document.getElementById('sPend').textContent = s.pending;
+  document.getElementById('sSent').textContent = s.sent;
+  document.getElementById('sSkip').textContent = s.skipped;
+  document.getElementById('sFollow').textContent = s.followups_due;
+  document.getElementById('navPending').textContent = s.pending + ' pending';
+  document.getElementById('navSent').textContent = s.sent + ' sent';
+  if (s.followups_due > 0) {
+    document.getElementById('navFollowup').style.display = 'inline';
+    document.getElementById('navFollowup').textContent = s.followups_due + ' follow-ups due';
+  }
+}
+
+// ── PROSPECTS ──
+async function loadProspects() {
+  const status = document.getElementById('filterCampaign').value;
+  const container = document.getElementById('prospectsContainer');
+  container.innerHTML = '<div class="loading"><span class="spinner"></span>Loading...</div>';
+  const res = await fetch(API + '/prospects?status=' + status);
+  const data = await res.json();
+  if (!data.length) { container.innerHTML = '<div class="loading">No prospects in this state.</div>'; return; }
+  container.innerHTML = '<div class="prospects-list">' + data.map(p => renderProspect(p)).join('') + '</div>';
+}
+
+function renderProspect(p) {
+  const badgeClass = {peekbot:'badge-peekbot',services:'badge-services',partner:'badge-partner'}[p.campaign] || 'badge-peekbot';
+  const noEmail = !p.email;
+  return `
+  <div class="prospect-card ${noEmail ? 'no-email' : ''}" id="pc-${p.id}">
+    <div class="pc-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.25rem;">
+          <div class="pc-name">${p.business_name}</div>
+          <span class="campaign-badge ${badgeClass}">${p.campaign}</span>
+          ${noEmail ? '<span class="no-email-warn">⚠ No email found</span>' : ''}
+        </div>
+        <a href="${p.website}" target="_blank" class="pc-url">${p.website}</a>
+      </div>
+      <div style="font-size:.72rem;color:var(--muted);">${new Date(p.created_at).toLocaleDateString()}</div>
+    </div>
+    <div class="pc-desc">${p.description || 'No description available'}</div>
+    <div class="pc-email-row">
+      <input type="email" id="email-${p.id}" value="${p.email || ''}" placeholder="Enter email address manually..." />
+      <button class="btn btn-ghost btn-sm" onclick="saveEmail(${p.id})">Save Email</button>
+    </div>
+    <div class="pc-draft">
+      <div class="pc-draft-subject">
+        <span style="color:var(--muted);font-size:.72rem;white-space:nowrap;">Subject:</span>
+        <input id="subj-${p.id}" value="${(p.draft_subject||'').replace(/"/g,'&quot;')}" />
+      </div>
+      <div class="pc-draft-body">
+        <textarea id="body-${p.id}">${p.draft_email || ''}</textarea>
+      </div>
+    </div>
+    <div class="pc-actions">
+      ${p.status === 'pending' ? `
+        <button class="btn btn-green btn-sm" onclick="approveProspect(${p.id})">✓ Approve & Send</button>
+        <button class="btn btn-red btn-sm" onclick="skipProspect(${p.id})">✗ Skip</button>
+      ` : `<span style="font-size:.75rem;color:var(--muted);">Status: ${p.status}</span>`}
+      <button class="btn btn-ghost btn-sm" onclick="regenerate(${p.id})">↻ Regenerate Email</button>
+    </div>
+  </div>`;
+}
+
+async function saveEmail(pid) {
+  const email = document.getElementById('email-' + pid).value;
+  const subj = document.getElementById('subj-' + pid).value;
+  const body = document.getElementById('body-' + pid).value;
+  await fetch(API + '/prospects/' + pid, {
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({email, draft_subject: subj, draft_email: body, status:'pending'})
+  });
+  showToast('Saved ✓');
+  document.getElementById('pc-' + pid).classList.remove('no-email');
+}
+
+async function approveProspect(pid) {
+  const email = document.getElementById('email-' + pid).value;
+  const subj = document.getElementById('subj-' + pid).value;
+  const body = document.getElementById('body-' + pid).value;
+  await fetch(API + '/prospects/' + pid, {
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({email, draft_subject: subj, draft_email: body, status:'pending'})
+  });
+  const res = await fetch(API + '/prospects/' + pid + '/approve', {method:'POST'});
+  const data = await res.json();
+  if (data.error) { showToast('Error: ' + data.error); return; }
+  showToast('Email sent! ✓');
+  document.getElementById('pc-' + pid).remove();
+  loadStats();
+}
+
+async function skipProspect(pid) {
+  await fetch(API + '/prospects/' + pid + '/skip', {method:'POST'});
+  showToast('Skipped');
+  document.getElementById('pc-' + pid).remove();
+  loadStats();
+}
+
+async function regenerate(pid) {
+  showToast('Regenerating...');
+  const res = await fetch(API + '/prospects/' + pid + '/regenerate', {method:'POST'});
+  const data = await res.json();
+  if (data.error) { showToast('Error: ' + data.error); return; }
+  document.getElementById('subj-' + pid).value = data.subject;
+  document.getElementById('body-' + pid).value = data.body;
+  showToast('Regenerated ✓');
+}
+
+// ── SENT ──
+async function loadSent() {
+  const container = document.getElementById('sentContainer');
+  container.innerHTML = '<div class="loading"><span class="spinner"></span>Loading...</div>';
+  const res = await fetch(API + '/sent');
+  const data = await res.json();
+  if (!data.length) { container.innerHTML = '<div class="loading">No emails sent yet.</div>'; return; }
+  const now = new Date();
+  container.innerHTML = `<table class="sent-table">
+    <thead><tr><th>Business</th><th>Email</th><th>Campaign</th><th>Subject</th><th>Sent</th><th>Follow-up</th></tr></thead>
+    <tbody>${data.map(e => {
+      const due = new Date(e.follow_up_due);
+      const isDue = due <= now;
+      return `<tr>
+        <td><a href="${e.website}" target="_blank" style="color:var(--accent);text-decoration:none;">${e.business_name}</a></td>
+        <td style="color:var(--muted);font-size:.75rem;">${e.email}</td>
+        <td><span class="campaign-badge badge-${e.campaign}">${e.campaign}</span></td>
+        <td style="max-width:220px;font-size:.75rem;">${e.subject}</td>
+        <td style="color:var(--muted);font-size:.75rem;">${new Date(e.sent_at).toLocaleDateString()}</td>
+        <td class="${isDue ? 'followup-due' : ''}" style="font-size:.75rem;">${isDue ? '⚡ Due now' : due.toLocaleDateString()}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+// ── SEARCH ──
+async function runSearch() {
+  const btn = document.getElementById('searchBtn');
+  const result = document.getElementById('searchResult');
+  btn.disabled = true;
+  btn.textContent = 'Searching...';
+  result.textContent = 'Finding prospects — this takes 30-60 seconds...';
+
+  const payload = {
+    vertical: document.getElementById('sVertical').value,
+    campaign: document.getElementById('sCampaign').value,
+    region: document.getElementById('sRegion').value,
+    custom_query: document.getElementById('sCustom').value
+  };
+
+  try {
+    const res = await fetch(API + '/search', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    result.textContent = `✓ Found and queued ${data.added} new prospects for "${data.query}"`;
+    result.style.color = 'var(--green)';
+    loadStats();
+    setTimeout(() => { showTab('prospects'); loadProspects(); }, 1500);
+  } catch(e) {
+    result.textContent = 'Error: ' + e.message;
+    result.style.color = 'var(--red)';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Find Prospects →';
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Init
+checkAuth();
+</script>
+</body>
+</html>
