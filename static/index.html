@@ -329,6 +329,64 @@ nav {
   .pricing-cards { grid-template-columns: 1fr; }
   .field.full { grid-column: span 1; }
 }
+
+@media (max-width: 768px) {
+  nav { padding: .75rem 1rem; }
+  .hero { padding: 5rem 1.25rem 3rem; }
+  .hero h1 { font-size: 2.2rem; }
+  .hero p { font-size: .85rem; }
+  .hero-actions { flex-direction: column; align-items: center; }
+  .hero-actions .btn { width: 100%; text-align: center; }
+  .hero-stats { gap: 1.25rem; }
+  .features { padding: 3rem 1.25rem; }
+  .features-grid { grid-template-columns: 1fr; }
+  .feature-card { padding: 1.5rem 1.25rem; }
+  .how { padding: 3rem 1.25rem; }
+  .steps { grid-template-columns: 1fr; gap: 1.5rem; }
+  .pricing { padding: 3rem 1.25rem; }
+  .pricing-cards { grid-template-columns: 1fr; }
+  .dashboard { padding: 4.5rem 1rem 2rem; }
+  .dash-grid { grid-template-columns: 1fr; }
+  .dash-card.full { grid-column: span 1; }
+  .customizer-grid { grid-template-columns: 1fr; }
+  .field.full { grid-column: span 1; }
+  #darkLightControls { grid-template-columns: 1fr !important; }
+  .modal { margin: 1rem; padding: 1.5rem; }
+  .nav-logo { font-size: 1.1rem; }
+  .btn-lg { padding: .65rem 1.25rem; font-size: .82rem; }
+}
+
+
+@media (max-width: 768px) {
+  .hero-stats { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 1rem;
+    width: 100%;
+  }
+  .stat-item { text-align: center; }
+  .hero-glow { display: none; }
+  .hero-badge { font-size: .62rem; }
+  section { padding: 3rem 1.25rem !important; }
+  .section-title { font-size: 1.8rem !important; }
+  [style*="grid-template-columns: repeat(3"] { 
+    grid-template-columns: 1fr !important; 
+  }
+  [style*="grid-template-columns:repeat(3"] { 
+    grid-template-columns: 1fr !important; 
+  }
+  [style*="max-width:900px"], 
+  [style*="max-width:700px"],
+  [style*="max-width: 900px"],
+  [style*="max-width: 700px"] { 
+    padding-left: 1.25rem !important; 
+    padding-right: 1.25rem !important; 
+  }
+  .pricing-card { padding: 1.5rem; }
+  .price-amount { font-size: 2rem; }
+  footer { padding: 2rem 1.25rem !important; }
+}
+
 </style>
 </head>
 <body>
@@ -353,7 +411,7 @@ nav {
     <p>Add one line of code. Capture leads 24/7. Works on any website — med spas, law firms, HVAC, dental, and more.</p>
     <div class="hero-actions">
       <button class="btn btn-primary btn-lg" onclick="showModal('register')">Start Free →</button>
-      <button class="btn btn-ghost btn-lg" onclick="scrollTo('#features')">See How It Works</button>
+      <button class="btn btn-ghost btn-lg" onclick="document.querySelector('#features').scrollIntoView({behavior:'smooth'})">See How It Works</button>
     </div>
     <div class="hero-stats">
       <div class="stat-item"><div class="stat-num">1</div><div class="stat-label">Line of Code</div></div>
@@ -361,6 +419,18 @@ nav {
       <div class="stat-item"><div class="stat-num">Any</div><div class="stat-label">Website</div></div>
       <div class="stat-item"><div class="stat-num">$49</div><div class="stat-label">Per Month</div></div>
     </div>
+  </section>
+
+
+  <!-- Live Demo -->
+  <section style="padding:5rem 2rem;max-width:700px;margin:0 auto;text-align:center;" id="features">
+    <div style="font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:#7c6af7;margin-bottom:.75rem;">Try It Now</div>
+    <h2 style="font-family:'Syne',sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:700;color:white;letter-spacing:-0.02em;margin-bottom:1rem;">See how it works <span style="color:#7c6af7;">live</span></h2>
+    <p style="color:rgba(255,255,255,0.4);font-size:.9rem;margin-bottom:2.5rem;">This is a real Peekbot widget — the same one your customers will see. Try asking it about pricing or features.</p>
+    <div style="position:relative;background:#1c1c1c;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:3rem 2rem;min-height:200px;display:flex;align-items:center;justify-content:center;">
+      <p style="color:rgba(255,255,255,0.3);font-size:.85rem;">👇 Click the chat button in the bottom right</p>
+    </div>
+    <script src="https://peekbot.cana.chat/embed.js" data-token="2c7805967b2fa9ce73ad50e010115eae"></script>
   </section>
 
   <!-- Features -->
@@ -425,6 +495,46 @@ nav {
   </section>
 
   <!-- Pricing -->
+
+  <!-- Trust / Security -->
+  <section style="padding:4rem 2rem;max-width:900px;margin:0 auto;text-align:center;">
+    <div style="font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:#7c6af7;margin-bottom:.75rem;">Privacy & Security</div>
+    <h2 style="font-family:'Syne',sans-serif;font-size:clamp(1.6rem,3vw,2.4rem);font-weight:700;color:white;letter-spacing:-0.02em;margin-bottom:.75rem;">We don't sell your data.<br>We don't even want it.</h2>
+    <p style="color:rgba(255,255,255,0.4);font-size:.88rem;max-width:520px;margin:0 auto 3rem;">Peekbot is a tool, not a data broker. Your conversations stay yours.</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.08);">
+      <div style="background:#141414;padding:2rem 1.5rem;">
+        <div style="font-size:1.5rem;margin-bottom:.75rem;">🔒</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;color:white;margin-bottom:.5rem;">No data selling</div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,0.4);line-height:1.6;">We never sell, share, or monetize your conversations or lead data. Ever.</div>
+      </div>
+      <div style="background:#141414;padding:2rem 1.5rem;">
+        <div style="font-size:1.5rem;margin-bottom:.75rem;">🗑️</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;color:white;margin-bottom:.5rem;">You own your data</div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,0.4);line-height:1.6;">Delete your account anytime and all your data — conversations, leads, bot config — is permanently removed.</div>
+      </div>
+      <div style="background:#141414;padding:2rem 1.5rem;">
+        <div style="font-size:1.5rem;margin-bottom:.75rem;">🛡️</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;color:white;margin-bottom:.5rem;">Encrypted in transit</div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,0.4);line-height:1.6;">All data is transmitted over HTTPS/TLS. Passwords are hashed and never stored in plain text.</div>
+      </div>
+      <div style="background:#141414;padding:2rem 1.5rem;">
+        <div style="font-size:1.5rem;margin-bottom:.75rem;">🚫</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;color:white;margin-bottom:.5rem;">No third-party trackers</div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,0.4);line-height:1.6;">No Google Analytics, no Facebook Pixel, no ad tracking on this site or your widget.</div>
+      </div>
+      <div style="background:#141414;padding:2rem 1.5rem;">
+        <div style="font-size:1.5rem;margin-bottom:.75rem;">📍</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;color:white;margin-bottom:.5rem;">Hosted in the USA</div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,0.4);line-height:1.6;">Your data never leaves US servers. Built and operated out of Oregon by a real human, not a faceless corporation.</div>
+      </div>
+      <div style="background:#141414;padding:2rem 1.5rem;">
+        <div style="font-size:1.5rem;margin-bottom:.75rem;">✉️</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;color:white;margin-bottom:.5rem;">Minimal email</div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,0.4);line-height:1.6;">We only email you lead alerts and occasional product updates. Unsubscribe anytime. No spam, ever.</div>
+      </div>
+    </div>
+  </section>
+
   <section class="pricing" id="pricing">
     <div class="section-label">Pricing</div>
     <h2 class="section-title">Simple flat pricing</h2>
@@ -435,7 +545,7 @@ nav {
         <div class="price-desc">Try it out, no card needed.</div>
         <ul class="price-features">
           <li>1 bot</li>
-          <li>50 messages/month</li>
+          <li>10 messages/month</li>
           <li>Lead capture</li>
           <li>Conversation dashboard</li>
         </ul>
@@ -446,11 +556,13 @@ nav {
         <div class="price-amount">$49 <span>/month</span></div>
         <div class="price-desc">For businesses serious about leads.</div>
         <ul class="price-features">
-          <li>1 bot</li>
+          <li>Up to 3 bots</li>
           <li>Unlimited messages</li>
           <li>Lead capture + email alerts</li>
           <li>Full conversation history</li>
           <li>Custom personality & colors</li>
+          <li>Light & dark mode bubble colors</li>
+          <li>No "Powered by Peekbot" branding</li>
           <li>Priority support</li>
         </ul>
         <button class="btn btn-primary" style="width:100%" onclick="showModal('register')">Start Free, Upgrade Later →</button>
@@ -461,7 +573,7 @@ nav {
   <!-- Footer -->
   <footer style="text-align:center; padding:3rem 2rem; border-top:1px solid var(--border); color:var(--muted); font-size:.8rem;">
     <div style="font-family:'Syne',sans-serif;font-weight:700;color:white;margin-bottom:.5rem;">Peek<span style="color:var(--accent)">bot</span></div>
-    A product of <a href="https://cana.chat" style="color:var(--accent);text-decoration:none;">cana.chat</a> · Built by TRULY PURE LLC · Oregon
+    Powered by <a href="https://cana.chat" style="color:var(--accent);text-decoration:none;">cana.chat</a> · Oregon
   </footer>
 
 </div>
@@ -511,6 +623,25 @@ nav {
               <div class="color-swatch" style="background:#c4866a;" onclick="setColor('#c4866a')"></div>
             </div>
           </div>
+          <div id="darkLightControls" style="display:none;grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="field">
+              <label>Chat Bubble — Light Mode</label>
+              <div class="color-row">
+                <input type="color" id="botColorLight" value="#ffffff" />
+                <span style="font-size:.72rem;color:var(--muted);">Light mode background</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>Chat Bubble — Dark Mode</label>
+              <div class="color-row">
+                <input type="color" id="botColorDark" value="#1c1c1c" />
+                <span style="font-size:.72rem;color:var(--muted);">Dark mode background</span>
+              </div>
+            </div>
+          </div>
+          <div id="proUpgradeHint" style="display:none;grid-column:span 2;background:rgba(124,106,247,0.08);border:1px solid rgba(124,106,247,0.2);border-radius:8px;padding:.75rem;font-size:.78rem;color:var(--accent);">
+            ⚡ <b>Pro feature:</b> Light/dark mode colors, 3 bots, no branding. <span style="cursor:pointer;text-decoration:underline;" onclick="showUpgrade()">Upgrade →</span>
+          </div>
           <div class="field full">
             <label>Greeting Message</label>
             <input type="text" id="botGreeting" placeholder="Hi! How can I help you today?" oninput="updatePreview()" />
@@ -521,6 +652,12 @@ nav {
           </div>
         </div>
         <button class="btn btn-primary" style="width:100%;margin-top:.5rem;" onclick="saveBot()">Save Changes</button>
+      </div>
+
+      <!-- Multiple Bots (Pro) -->
+      <div class="dash-card full" id="botsSection" style="display:none;">
+        <h3>🤖 Your Bots <button class="btn btn-primary" style="font-size:.7rem;padding:.3rem .75rem;margin-left:.5rem;" onclick="createBot()">+ New Bot</button></h3>
+        <div id="botsContainer"></div>
       </div>
 
       <!-- Embed Code -->
@@ -615,7 +752,7 @@ nav {
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="https://www.paypal.com/sdk/js?client-id=Ae_QcLY1sOCZd71-iAM13rQMCpszglz0PgNswUgEcV9p5iuRda2H2yY-wXJycu2NmhukQMmjZBwhRKY5&currency=USD"></script>
+<script src="https://www.paypal.com/sdk/js?client-id=Ae_QcLY1sOCZd71-iAM13rQMCpszglz0PgNswUgEcV9p5iuRda2H2yY-wXJycu2NmhukQMmjZBwhRKY5&vault=true&intent=subscription"></script>
 
 <script>
 const API = '';
@@ -713,6 +850,8 @@ async function showDashboard() {
     document.getElementById('botGreeting').value = bot.greeting || '';
     document.getElementById('botPrompt').value = bot.system_prompt || '';
     document.getElementById('botColor').value = bot.color || '#7c6af7';
+    document.getElementById('botColorLight').value = bot.color_light || '#ffffff';
+    document.getElementById('botColorDark').value = bot.color_dark || '#1c1c1c';
     updatePreview();
     updateEmbedCode();
   } catch(e) {}
@@ -763,6 +902,8 @@ async function saveBot() {
     greeting: document.getElementById('botGreeting').value,
     system_prompt: document.getElementById('botPrompt').value,
     color: document.getElementById('botColor').value,
+    color_light: document.getElementById('botColorLight').value,
+    color_dark: document.getElementById('botColorDark').value,
     lead_capture: 1
   };
   try {
@@ -830,19 +971,18 @@ function showUpgrade() {
   document.getElementById('upgradeModal').classList.add('active');
   if (window.paypal && !document.getElementById('paypal-button-container').hasChildNodes()) {
     paypal.Buttons({
-      createOrder: async function() {
-        const res = await fetch(API + '/api/paypal/create-order', {
-          method:'POST', headers:{'Authorization':'Bearer '+userToken,'Content-Type':'application/json'}
+      createSubscription: function(data, actions) {
+        return actions.subscription.create({
+          plan_id: 'P-61W12046L3470310FNG7VENQ'
         });
-        const data = await res.json();
-        return data.id;
       },
       onApprove: async function(data) {
-        const res = await fetch(API + '/api/paypal/capture/' + data.orderID, {
-          method:'POST', headers:{'Authorization':'Bearer '+userToken,'Content-Type':'application/json'}
+        const res = await fetch(API + '/api/paypal/activate', {
+          method:'POST', headers:{'Authorization':'Bearer '+userToken,'Content-Type':'application/json'},
+          body: JSON.stringify({subscription_id: data.subscriptionID})
         });
         const result = await res.json();
-        if (result.status === 'COMPLETED') {
+        if (result.success) {
           localStorage.setItem('pb_plan', 'pro');
           userPlan = 'pro';
           updatePlanUI('pro');
@@ -852,6 +992,52 @@ function showUpgrade() {
       }
     }).render('#paypal-button-container');
   }
+}
+
+// ── MULTI-BOT (PRO) ──
+async function loadBots() {
+  const res = await fetch(API + '/api/bots', {headers:{'Authorization':'Bearer '+userToken}});
+  const data = await res.json();
+  const container = document.getElementById('botsContainer');
+  container.innerHTML = '<div style="display:flex;flex-direction:column;gap:.75rem;">' +
+    data.bots.map(b => `
+      <div style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:1rem;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:600;color:white;">${b.name}</div>
+          <div style="font-size:.72rem;color:var(--muted);font-family:monospace;margin-top:.2rem;">Token: ${b.token}</div>
+        </div>
+        <div style="display:flex;gap:.5rem;">
+          <button class="btn btn-ghost" style="font-size:.72rem;" onclick="switchBot(${b.id}, '${b.token}')">Edit</button>
+          ${data.bots.length > 1 ? `<button class="btn btn-ghost" style="font-size:.72rem;color:#f87171;" onclick="deleteBot(${b.id})">Delete</button>` : ''}
+        </div>
+      </div>`).join('') + '</div>' +
+    (data.bots.length < 3 ? '<button class="btn btn-ghost" style="margin-top:.75rem;width:100%;" onclick="createBot()">+ Add Bot (' + data.bots.length + '/3)</button>' : '');
+}
+
+async function createBot() {
+  const name = prompt('Bot name:');
+  if (!name) return;
+  const res = await fetch(API + '/api/bots', {
+    method:'POST', headers:{'Authorization':'Bearer '+userToken,'Content-Type':'application/json'},
+    body: JSON.stringify({name})
+  });
+  const data = await res.json();
+  if (data.error) { showToast(data.error); return; }
+  showToast('Bot created! ✓');
+  loadBots();
+}
+
+async function deleteBot(id) {
+  if (!confirm('Delete this bot?')) return;
+  await fetch(API + '/api/bots/' + id, {method:'DELETE', headers:{'Authorization':'Bearer '+userToken}});
+  showToast('Bot deleted');
+  loadBots();
+}
+
+function switchBot(id, token) {
+  botToken = token;
+  updateEmbedCode();
+  showToast('Switched to bot — edit and save below');
 }
 
 // ── TOAST ──

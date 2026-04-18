@@ -50,6 +50,8 @@ def init_db():
             color TEXT DEFAULT '#111111',
             avatar TEXT DEFAULT '',
             lead_capture INTEGER DEFAULT 1,
+            color_light TEXT DEFAULT '#ffffff',
+            color_dark TEXT DEFAULT '#1c1c1c',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(user_id) REFERENCES users(id)
         );
@@ -150,10 +152,59 @@ def get_bot():
     uid = verify_token(request)
     if not uid: return jsonify({'error': 'Unauthorized'}), 401
     db = get_db()
+    user = db.execute('SELECT * FROM users WHERE id=?', (uid,)).fetchone()
     bot = db.execute('SELECT * FROM bots WHERE user_id=? ORDER BY id LIMIT 1', (uid,)).fetchone()
     db.close()
     if not bot: return jsonify({'error': 'No bot found'}), 404
+    return jsonify({**dict(bot), 'plan': user['plan']})
+
+@app.route('/api/bots', methods=['GET'])
+def get_bots():
+    uid = verify_token(request)
+    if not uid: return jsonify({'error': 'Unauthorized'}), 401
+    db = get_db()
+    user = db.execute('SELECT * FROM users WHERE id=?', (uid,)).fetchone()
+    bots = db.execute('SELECT * FROM bots WHERE user_id=? ORDER BY id', (uid,)).fetchall()
+    db.close()
+    return jsonify({'bots': [dict(b) for b in bots], 'plan': user['plan']})
+
+@app.route('/api/bots', methods=['POST'])
+def create_bot():
+    uid = verify_token(request)
+    if not uid: return jsonify({'error': 'Unauthorized'}), 401
+    db = get_db()
+    user = db.execute('SELECT * FROM users WHERE id=?', (uid,)).fetchone()
+    bot_count = db.execute('SELECT COUNT(*) as cnt FROM bots WHERE user_id=?', (uid,)).fetchone()['cnt']
+    if user['plan'] == 'free' and bot_count >= 1:
+        db.close()
+        return jsonify({'error': 'Upgrade to Pro for multiple bots'}), 403
+    if user['plan'] == 'pro' and bot_count >= 3:
+        db.close()
+        return jsonify({'error': 'Pro plan allows up to 3 bots'}), 403
+    import secrets as sec
+    token = sec.token_hex(16)
+    d = request.json
+    db.execute('INSERT INTO bots (user_id, token, name, greeting, system_prompt, color) VALUES (?, ?, ?, ?, ?, ?)',
+        (uid, token, d.get('name', 'Assistant'), d.get('greeting', 'Hi! How can I help?'),
+         d.get('system_prompt', 'You are a helpful assistant.'), d.get('color', '#7c6af7')))
+    db.commit()
+    bot = db.execute('SELECT * FROM bots WHERE token=?', (token,)).fetchone()
+    db.close()
     return jsonify(dict(bot))
+
+@app.route('/api/bots/<int:bot_id>', methods=['DELETE'])
+def delete_bot(bot_id):
+    uid = verify_token(request)
+    if not uid: return jsonify({'error': 'Unauthorized'}), 401
+    db = get_db()
+    bot_count = db.execute('SELECT COUNT(*) as cnt FROM bots WHERE user_id=?', (uid,)).fetchone()['cnt']
+    if bot_count <= 1:
+        db.close()
+        return jsonify({'error': 'Cannot delete your only bot'}), 400
+    db.execute('DELETE FROM bots WHERE id=? AND user_id=?', (bot_id, uid))
+    db.commit()
+    db.close()
+    return jsonify({'success': True})
 
 @app.route('/api/bot', methods=['PUT'])
 def update_bot():
@@ -161,10 +212,11 @@ def update_bot():
     if not uid: return jsonify({'error': 'Unauthorized'}), 401
     d = request.json
     db = get_db()
-    db.execute('''UPDATE bots SET name=?, greeting=?, system_prompt=?, color=?, lead_capture=?
+    db.execute('''UPDATE bots SET name=?, greeting=?, system_prompt=?, color=?, lead_capture=?, color_light=?, color_dark=?
                   WHERE user_id=?''',
         (d.get('name'), d.get('greeting'), d.get('system_prompt'),
-         d.get('color', '#111111'), d.get('lead_capture', 1), uid))
+         d.get('color', '#111111'), d.get('lead_capture', 1),
+         d.get('color_light', '#ffffff'), d.get('color_dark', '#1c1c1c'), uid))
     db.commit()
     bot = db.execute('SELECT * FROM bots WHERE user_id=?', (uid,)).fetchone()
     db.close()
@@ -219,6 +271,20 @@ def chat(bot_token):
     d = request.json
     messages = d.get('messages', [])
     session_id = d.get('session_id', secrets.token_hex(8))
+
+    # Check message limit for free users
+    user = db.execute('SELECT * FROM users WHERE id=?', (bot['user_id'],)).fetchone()
+    if user and user['plan'] == 'free':
+        import calendar
+        now = datetime.datetime.utcnow()
+        month_start = now.replace(day=1, hour=0, minute=0, second=0).strftime('%Y-%m-%d %H:%M:%S')
+        msg_count = db.execute(
+            "SELECT COUNT(*) as cnt FROM conversations WHERE bot_id=? AND role='user' AND created_at >= ?",
+            (bot['id'], month_start)
+        ).fetchone()['cnt']
+        if msg_count >= 10:
+            db.close()
+            return jsonify({'reply': 'Monthly message limit reached. Upgrade to Pro at peekbot.cana.chat for unlimited messages! 🚀', 'session_id': session_id, 'limit_reached': True})
 
     # Store user message
     if messages:
@@ -289,7 +355,7 @@ def capture_lead(bot_token):
 @app.route('/api/config/<bot_token>', methods=['GET'])
 def get_config(bot_token):
     db = get_db()
-    bot = db.execute('SELECT name, greeting, color, lead_capture, token FROM bots WHERE token=?', (bot_token,)).fetchone()
+    bot = db.execute('SELECT b.name, b.greeting, b.color, b.lead_capture, b.token, b.color_light, b.color_dark, u.plan FROM bots b JOIN users u ON b.user_id=u.id WHERE b.token=?', (bot_token,)).fetchone()
     db.close()
     if not bot: return jsonify({'error': 'Not found'}), 404
     return jsonify(dict(bot))
@@ -376,6 +442,10 @@ def embed_script():
     .catch(function() {});
 
   function inject() {
+    var darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var bubbleBg = darkMode ? (config.color_dark || '#2a2a2a') : (config.color_light || '#ffffff');
+    var bubbleText = darkMode ? '#eeeeee' : '#111111';
+    var bubbleBorder = darkMode ? '#444444' : '#e5e5e5';
     var style = document.createElement('style');
     style.textContent = `
       #pb-widget { position:fixed; bottom:1.5rem; right:1.5rem; z-index:999999; font-family:system-ui,sans-serif; }
@@ -563,5 +633,121 @@ def embed_script():
 """
     return Response(script, mimetype='application/javascript')
 
+
+# ─── EMAIL SEQUENCES ───
+def send_sequence_email(to, subject, body):
+    send_email(to, subject, body)
+
+def check_email_sequences():
+    db = get_db()
+    users = db.execute("SELECT * FROM users WHERE plan='free' AND active=0").fetchall()
+    now = datetime.datetime.utcnow()
+    
+    for user in users:
+        created = datetime.datetime.strptime(user['created_at'], '%Y-%m-%d %H:%M:%S')
+        days = (now - created).days
+        email = user['email']
+        name = user['name'] or 'there'
+        
+        # Day 1 - Welcome + setup tips
+        if days == 1:
+            send_sequence_email(email, 
+                'Your Peekbot is ready to capture leads 🎯',
+                f'''<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:2rem;">
+                <h2 style="color:#7c6af7;">Hey {name}! Your bot is live.</h2>
+                <p>Here's how to get your first lead in 24 hours:</p>
+                <ol>
+                    <li style="margin:8px 0;"><b>Customize your bot</b> — set your business name, color, and what it knows about you</li>
+                    <li style="margin:8px 0;"><b>Copy your embed code</b> — paste it into your website footer</li>
+                    <li style="margin:8px 0;"><b>Test it yourself</b> — visit your site and chat with it</li>
+                </ol>
+                <p>Login and get set up → <a href="https://peekbot.cana.chat" style="color:#7c6af7;">peekbot.cana.chat</a></p>
+                <p style="color:#888;font-size:.85rem;">Questions? Just reply to this email.</p>
+                </div>''')
+
+        # Day 3 - Social proof nudge
+        elif days == 3:
+            send_sequence_email(email,
+                'How a med spa captured 3 leads overnight with Peekbot',
+                f'''<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:2rem;">
+                <h2 style="color:#7c6af7;">Hey {name} 👋</h2>
+                <p>A med spa in Portland added Peekbot to their site. By morning they had 3 new leads — people who were browsing at 11pm and had questions about Botox pricing.</p>
+                <p>Without the bot, those leads would have bounced.</p>
+                <p><b>Have you added your embed code yet?</b> It takes 2 minutes.</p>
+                <p>→ <a href="https://peekbot.cana.chat" style="color:#7c6af7;">Log in and grab your embed code</a></p>
+                <p style="color:#888;font-size:.85rem;">Still on the free plan — <a href="https://peekbot.cana.chat" style="color:#7c6af7;">upgrade to Pro</a> for unlimited messages + email alerts.</p>
+                </div>''')
+
+        # Day 7 - Upgrade push
+        elif days == 7:
+            send_sequence_email(email,
+                'Your free plan expires in 23 days',
+                f'''<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:2rem;">
+                <h2 style="color:#7c6af7;">Hey {name},</h2>
+                <p>You've been on Peekbot for a week. Here's what Pro unlocks:</p>
+                <ul>
+                    <li style="margin:6px 0;">✓ Unlimited messages (free plan caps at 50/mo)</li>
+                    <li style="margin:6px 0;">✓ Email alert every time a lead is captured</li>
+                    <li style="margin:6px 0;">✓ Full conversation history</li>
+                    <li style="margin:6px 0;">✓ Priority support</li>
+                </ul>
+                <p>One new customer from your bot pays for 6 months of Pro.</p>
+                <p>→ <a href="https://peekbot.cana.chat" style="color:#7c6af7;font-weight:bold;">Upgrade to Pro — $49/month</a></p>
+                </div>''')
+
+        # Day 14 - Need help?
+        elif days == 14:
+            send_sequence_email(email,
+                'Need help setting up your Peekbot?',
+                f'''<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:2rem;">
+                <h2 style="color:#7c6af7;">Hey {name},</h2>
+                <p>I noticed you haven't embedded your bot yet. I can do it for you — for free.</p>
+                <p>Just reply to this email with your website URL and I'll personally install it and make sure it's working.</p>
+                <p>Takes me 10 minutes. Zero cost to you.</p>
+                <p style="color:#888;font-size:.85rem;">— Jackson, founder of Peekbot</p>
+                </div>''')
+
+        # Day 30 - Last chance
+        elif days == 30:
+            send_sequence_email(email,
+                'Last email from us — still want your free bot?',
+                f'''<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:2rem;">
+                <h2 style="color:#7c6af7;">Hey {name},</h2>
+                <p>It's been 30 days. Your free Peekbot account is still active but I want to make sure it's actually useful to you.</p>
+                <p>Two options:</p>
+                <p><b>1.</b> <a href="https://peekbot.cana.chat" style="color:#7c6af7;">Log in and set it up</a> — I'll personally help if you reply to this email.</p>
+                <p><b>2.</b> If you're not interested anymore, just ignore this — no hard feelings.</p>
+                <p style="color:#888;font-size:.85rem;">— Jackson</p>
+                </div>''')
+
+    db.close()
+
+# Run sequence check on startup and every 12 hours
+import threading
+
+def sequence_loop():
+    import time
+    while True:
+        try:
+            check_email_sequences()
+        except Exception as e:
+            print(f"Sequence error: {e}")
+        time.sleep(43200)  # 12 hours
+
+sequence_thread = threading.Thread(target=sequence_loop, daemon=True)
+sequence_thread.start()
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3005)
+
+@app.route('/api/paypal/activate', methods=['POST'])
+def activate_subscription():
+    uid = verify_token(request)
+    if not uid: return jsonify({'error': 'Unauthorized'}), 401
+    d = request.json
+    db = get_db()
+    db.execute("UPDATE users SET plan='pro', active=1, paypal_sub_id=? WHERE id=?",
+        (d.get('subscription_id'), uid))
+    db.commit()
+    db.close()
+    return jsonify({'success': True})
