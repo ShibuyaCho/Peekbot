@@ -231,14 +231,26 @@ nav { background: var(--dark); border-bottom: 1px solid var(--border); padding: 
     <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
       <h3 style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:white;margin-bottom:.75rem;">How it works</h3>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;">
-        ${['🔍 Bot searches Brave for businesses matching your criteria',
-           '🌐 Visits each website to find email addresses and owner info',
-           '✍️ GPT writes a personalized email for each prospect',
-           '👀 You review and approve before anything sends'].map((s,i) => `
         <div style="font-size:.78rem;color:var(--muted);line-height:1.6;">
-          <div style="font-size:1.2rem;margin-bottom:.4rem;">${s.split(' ')[0]}</div>
-          ${s.split(' ').slice(1).join(' ')}
+          <div style="font-size:1.2rem;margin-bottom:.4rem;">🔍</div>
+          Bot searches Brave for businesses matching your criteria
         </div>`).join('')}
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.6;">
+          <div style="font-size:1.2rem;margin-bottom:.4rem;">🔍</div>
+          Bot searches Brave for businesses matching your criteria
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.6;">
+          <div style="font-size:1.2rem;margin-bottom:.4rem;">🌐</div>
+          Visits each website to find email addresses and owner info
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.6;">
+          <div style="font-size:1.2rem;margin-bottom:.4rem;">✍️</div>
+          GPT writes a personalized email for each prospect
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.6;">
+          <div style="font-size:1.2rem;margin-bottom:.4rem;">👀</div>
+          You review and approve before anything sends
+        </div>
       </div>
     </div>
   </div>
