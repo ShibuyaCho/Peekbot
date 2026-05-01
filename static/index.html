@@ -18,38 +18,27 @@
   --accent: #7c6af7;
   --accent2: #f97316;
   --green: #4ade80;
+  --red: #f87171;
+  --yellow: #fbbf24;
 }
 
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--black);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--text); min-height: 100vh; overflow-x: hidden; }
 
-/* VIEWS */
 .view { display: none; }
 .view.active { display: block; }
 
-/* ── NAV ── */
 nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   padding: 1rem 2rem;
   display: flex; align-items: center; justify-content: space-between;
   border-bottom: 1px solid var(--border);
-  background: rgba(10,10,10,0.9);
-  backdrop-filter: blur(12px);
+  background: rgba(10,10,10,0.9); backdrop-filter: blur(12px);
 }
-.nav-logo {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.3rem; font-weight: 800;
-  color: white; letter-spacing: -0.02em;
-}
+.nav-logo { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: white; letter-spacing: -0.02em; }
 .nav-logo span { color: var(--accent); }
 .nav-actions { display: flex; gap: .75rem; align-items: center; }
-.btn { padding: .5rem 1.1rem; border-radius: 8px; font-size: .8rem; font-weight: 500;
-  cursor: pointer; border: none; transition: all .2s; font-family: 'DM Sans', sans-serif; }
+
+.btn { padding: .5rem 1.1rem; border-radius: 8px; font-size: .8rem; font-weight: 500; cursor: pointer; border: none; transition: all .2s; font-family: 'DM Sans', sans-serif; }
 .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
 .btn-ghost:hover { color: white; border-color: rgba(255,255,255,0.2); }
 .btn-primary { background: var(--accent); color: white; }
@@ -59,109 +48,35 @@ nav {
 .btn-lg { padding: .75rem 1.75rem; font-size: .9rem; border-radius: 10px; }
 .btn-dark { background: var(--card); color: var(--text); border: 1px solid var(--border); }
 .btn-dark:hover { background: #252525; }
+.btn-sm { padding: .3rem .65rem; font-size: .72rem; border-radius: 6px; }
+.btn-danger { background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.25); }
+.btn-danger:hover { background: rgba(248,113,113,0.22); }
 
-/* ── LANDING ── */
-.hero {
-  min-height: 100vh;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  text-align: center;
-  padding: 6rem 2rem 4rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.hero-glow {
-  position: absolute;
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(124,106,247,0.15) 0%, transparent 70%);
-  top: 50%; left: 50%; transform: translate(-50%, -50%);
-  pointer-events: none;
-}
-
-.hero-badge {
-  display: inline-flex; align-items: center; gap: .4rem;
-  padding: .3rem .85rem; border-radius: 20px;
-  background: rgba(124,106,247,0.12); border: 1px solid rgba(124,106,247,0.3);
-  font-size: .72rem; color: var(--accent); letter-spacing: .06em;
-  text-transform: uppercase; margin-bottom: 1.5rem;
-}
-
-.hero h1 {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(2.5rem, 6vw, 5rem);
-  font-weight: 800; line-height: 1.05;
-  letter-spacing: -0.03em; color: white;
-  margin-bottom: 1.25rem; max-width: 800px;
-}
+.hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 6rem 2rem 4rem; position: relative; overflow: hidden; }
+.hero-glow { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(124,106,247,0.15) 0%, transparent 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+.hero-badge { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .85rem; border-radius: 20px; background: rgba(124,106,247,0.12); border: 1px solid rgba(124,106,247,0.3); font-size: .72rem; color: var(--accent); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 1.5rem; }
+.hero h1 { font-family: 'Syne', sans-serif; font-size: clamp(2.5rem, 6vw, 5rem); font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; color: white; margin-bottom: 1.25rem; max-width: 800px; }
 .hero h1 span { color: var(--accent); }
-
-.hero p {
-  font-size: clamp(.9rem, 2vw, 1.1rem);
-  color: var(--muted); max-width: 520px;
-  line-height: 1.7; margin-bottom: 2.5rem;
-}
-
+.hero p { font-size: clamp(.9rem, 2vw, 1.1rem); color: var(--muted); max-width: 520px; line-height: 1.7; margin-bottom: 2.5rem; }
 .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-bottom: 3rem; }
-
-.hero-stats {
-  display: flex; gap: 2.5rem; flex-wrap: wrap; justify-content: center;
-  padding-top: 2rem; border-top: 1px solid var(--border);
-}
+.hero-stats { display: flex; gap: 2.5rem; flex-wrap: wrap; justify-content: center; padding-top: 2rem; border-top: 1px solid var(--border); }
 .stat-item { text-align: center; }
 .stat-num { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 700; color: white; }
 .stat-label { font-size: .72rem; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
 
-/* Features */
-.features {
-  padding: 5rem 2rem;
-  max-width: 1100px; margin: 0 auto;
-}
-.section-label {
-  font-size: .7rem; letter-spacing: .2em; text-transform: uppercase;
-  color: var(--accent); margin-bottom: .75rem;
-}
-.section-title {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(1.8rem, 4vw, 2.8rem);
-  font-weight: 700; color: white;
-  letter-spacing: -0.02em; margin-bottom: 3rem;
-}
-
-.features-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
-  background: var(--border);
-}
-.feature-card {
-  background: var(--dark); padding: 2rem 1.75rem;
-  transition: background .25s;
-}
+.features { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; }
+.section-label { font-size: .7rem; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); margin-bottom: .75rem; }
+.section-title { font-family: 'Syne', sans-serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700; color: white; letter-spacing: -0.02em; margin-bottom: 3rem; }
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); }
+.feature-card { background: var(--dark); padding: 2rem 1.75rem; transition: background .25s; }
 .feature-card:hover { background: var(--card); }
-.feature-icon {
-  width: 40px; height: 40px; border-radius: 10px;
-  background: rgba(124,106,247,0.15); display: flex; align-items: center;
-  justify-content: center; margin-bottom: 1rem; font-size: 1.1rem;
-}
-.feature-card h3 {
-  font-family: 'Syne', sans-serif; font-size: 1rem;
-  font-weight: 600; color: white; margin-bottom: .5rem;
-}
+.feature-icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(124,106,247,0.15); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; font-size: 1.1rem; }
+.feature-card h3 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 600; color: white; margin-bottom: .5rem; }
 .feature-card p { font-size: .82rem; color: var(--muted); line-height: 1.65; }
 
-/* Pricing */
-.pricing {
-  padding: 5rem 2rem;
-  max-width: 900px; margin: 0 auto; text-align: center;
-}
-.pricing-cards {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
-  margin-top: 3rem;
-}
-.pricing-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 16px; padding: 2rem; text-align: left;
-  transition: border-color .25s;
-}
+.pricing { padding: 5rem 2rem; max-width: 1000px; margin: 0 auto; text-align: center; }
+.pricing-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 3rem; }
+.pricing-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; text-align: left; transition: border-color .25s; }
 .pricing-card:hover { border-color: rgba(255,255,255,0.15); }
 .pricing-card.featured { border-color: var(--accent); background: rgba(124,106,247,0.06); }
 .price-amount { font-family: 'Syne', sans-serif; font-size: 2.5rem; font-weight: 800; color: white; }
@@ -169,229 +84,137 @@ nav {
 .price-name { font-size: .72rem; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); margin-bottom: .75rem; }
 .price-desc { font-size: .82rem; color: var(--muted); margin: .75rem 0 1.25rem; line-height: 1.6; }
 .price-features { list-style: none; margin-bottom: 1.5rem; }
-.price-features li { font-size: .8rem; color: var(--text); padding: .3rem 0;
-  display: flex; align-items: center; gap: .5rem; }
+.price-features li { font-size: .8rem; color: var(--text); padding: .3rem 0; display: flex; align-items: center; gap: .5rem; }
 .price-features li::before { content: '✓'; color: var(--green); font-size: .75rem; }
 
-/* How it works */
 .how { padding: 5rem 2rem; max-width: 900px; margin: 0 auto; }
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; }
 .step { text-align: center; }
-.step-num {
-  width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(124,106,247,0.15); border: 1px solid rgba(124,106,247,0.3);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Syne', sans-serif; font-weight: 700; color: var(--accent);
-  margin: 0 auto 1rem;
-}
+.step-num { width: 44px; height: 44px; border-radius: 50%; background: rgba(124,106,247,0.15); border: 1px solid rgba(124,106,247,0.3); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 700; color: var(--accent); margin: 0 auto 1rem; }
 .step h3 { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 600; color: white; margin-bottom: .4rem; }
 .step p { font-size: .8rem; color: var(--muted); line-height: 1.6; }
 
-/* ── AUTH MODAL ── */
-.modal-overlay {
-  display: none; position: fixed; inset: 0; z-index: 1000;
-  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
-  align-items: center; justify-content: center;
-}
+.modal-overlay { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 1rem; }
 .modal-overlay.active { display: flex; }
-.modal {
-  background: var(--dark); border: 1px solid var(--border);
-  border-radius: 16px; padding: 2rem; width: 100%; max-width: 380px;
-}
+.modal { background: var(--dark); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; width: 100%; max-width: 420px; position: relative; }
+.modal-lg { max-width: 600px; }
 .modal h2 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 700; color: white; margin-bottom: .4rem; }
-.modal p { font-size: .82rem; color: var(--muted); margin-bottom: 1.5rem; }
+.modal > p { font-size: .82rem; color: var(--muted); margin-bottom: 1.5rem; }
+.modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.2rem; line-height: 1; }
+.modal-close:hover { color: white; }
 .form-group { margin-bottom: 1rem; }
 .form-group label { font-size: .75rem; color: var(--muted); display: block; margin-bottom: .3rem; }
-.form-group input {
-  width: 100%; background: var(--card); border: 1px solid var(--border);
-  border-radius: 8px; padding: .6rem .85rem; color: white;
-  font-family: 'DM Sans', sans-serif; font-size: .85rem; outline: none;
-}
-.form-group input:focus { border-color: var(--accent); }
+.form-group input, .form-group select, .form-group textarea { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: .6rem .85rem; color: white; font-family: 'DM Sans', sans-serif; font-size: .85rem; outline: none; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+.form-group select option { background: var(--card); }
 .modal-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; }
 .modal-switch { font-size: .78rem; color: var(--muted); cursor: pointer; }
 .modal-switch span { color: var(--accent); }
-.modal-error { font-size: .78rem; color: #f87171; margin-top: .5rem; display: none; }
+.modal-error { font-size: .78rem; color: var(--red); margin-top: .5rem; display: none; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
 
-/* ── DASHBOARD ── */
-.dashboard { padding: 5rem 2rem 3rem; max-width: 1100px; margin: 0 auto; }
-.dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+.dashboard { padding: 5rem 2rem 3rem; max-width: 1200px; margin: 0 auto; }
+.dash-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem; }
 .dash-header h1 { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 700; color: white; }
+.dash-tabs { display: flex; gap: .25rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border); overflow-x: auto; }
+.dash-tab { padding: .75rem 1.25rem; background: none; border: none; color: var(--muted); cursor: pointer; font-size: .85rem; font-weight: 500; border-bottom: 2px solid transparent; transition: all .2s; white-space: nowrap; font-family: 'DM Sans', sans-serif; }
+.dash-tab.active { color: white; border-bottom-color: var(--accent); }
 .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-.dash-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 14px; padding: 1.5rem;
-}
-.dash-card h3 {
-  font-family: 'Syne', sans-serif; font-size: .85rem; font-weight: 600;
-  color: var(--muted); letter-spacing: .08em; text-transform: uppercase;
-  margin-bottom: 1.25rem; display: flex; align-items: center; gap: .5rem;
-}
+.dash-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; }
+.dash-card h3 { font-family: 'Syne', sans-serif; font-size: .85rem; font-weight: 600; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 1.25rem; display: flex; align-items: center; gap: .5rem; }
 .dash-card.full { grid-column: span 2; }
 
-/* Bot customizer */
 .customizer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .field { margin-bottom: 1rem; }
 .field label { font-size: .75rem; color: var(--muted); display: block; margin-bottom: .3rem; }
-.field input, .field textarea, .field select {
-  width: 100%; background: var(--dark); border: 1px solid var(--border);
-  border-radius: 8px; padding: .55rem .8rem; color: white;
-  font-family: 'DM Sans', sans-serif; font-size: .83rem; outline: none;
-  resize: vertical;
-}
-.field input:focus, .field textarea:focus { border-color: var(--accent); }
+.field input, .field textarea, .field select { width: 100%; background: var(--dark); border: 1px solid var(--border); border-radius: 8px; padding: .55rem .8rem; color: white; font-family: 'DM Sans', sans-serif; font-size: .83rem; outline: none; resize: vertical; }
+.field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); }
 .field.full { grid-column: span 2; }
-.color-row { display: flex; gap: .5rem; align-items: center; }
-.color-row input[type=color] { width: 40px; height: 36px; padding: 2px; border-radius: 6px; cursor: pointer; }
-.color-swatch {
-  width: 28px; height: 28px; border-radius: 6px; cursor: pointer;
-  border: 2px solid transparent; transition: border-color .2s;
-}
-.color-swatch:hover, .color-swatch.active { border-color: white; }
+.field select option { background: var(--dark); }
 
-/* Embed code */
-.embed-box {
-  background: var(--dark); border: 1px solid var(--border);
-  border-radius: 8px; padding: 1rem; font-family: monospace;
-  font-size: .78rem; color: #7dd3fc; word-break: break-all;
-  position: relative;
-}
-.copy-btn {
-  position: absolute; top: .5rem; right: .5rem;
-  padding: .3rem .65rem; background: var(--accent); color: white;
-  border: none; border-radius: 6px; font-size: .7rem; cursor: pointer;
-}
+.embed-box { background: var(--dark); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 3rem 1rem 1rem; font-family: monospace; font-size: .78rem; color: #7dd3fc; word-break: break-all; position: relative; }
+.copy-btn { position: absolute; top: .5rem; right: .5rem; padding: .3rem .65rem; background: var(--accent); color: white; border: none; border-radius: 6px; font-size: .7rem; cursor: pointer; }
 
-/* Leads table */
-.leads-table { width: 100%; border-collapse: collapse; }
-.leads-table th { font-size: .72rem; color: var(--muted); text-transform: uppercase;
-  letter-spacing: .08em; padding: .5rem .75rem; text-align: left;
-  border-bottom: 1px solid var(--border); }
-.leads-table td { font-size: .82rem; color: var(--text); padding: .65rem .75rem;
-  border-bottom: 1px solid rgba(255,255,255,0.04); }
-.leads-table tr:hover td { background: rgba(255,255,255,0.02); }
-.empty-state { text-align: center; padding: 2rem; color: var(--muted); font-size: .85rem; }
+.super-pro-section { background: rgba(124,106,247,0.08); border: 1px solid rgba(124,106,247,0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+.super-pro-section h4 { color: var(--accent); font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: .75rem; }
 
-/* Conversations */
-.convo-list { display: flex; flex-direction: column; gap: .5rem; }
-.convo-item {
-  background: var(--dark); border: 1px solid var(--border);
-  border-radius: 8px; padding: .75rem 1rem;
-  display: flex; justify-content: space-between; align-items: center;
-  cursor: pointer; transition: border-color .2s;
-}
-.convo-item:hover { border-color: var(--accent); }
-.convo-id { font-size: .8rem; color: var(--text); font-family: monospace; }
-.convo-meta { font-size: .72rem; color: var(--muted); }
+.table-wrapper { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; }
+.table th { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; padding: .5rem .75rem; text-align: left; border-bottom: 1px solid var(--border); }
+.table td { font-size: .82rem; color: var(--text); padding: .65rem .75rem; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+.table tr:hover td { background: rgba(255,255,255,0.025); cursor: pointer; }
+.table tr.no-click:hover td { cursor: default; }
 
-/* Plan badge */
-.plan-badge {
-  padding: .25rem .65rem; border-radius: 20px; font-size: .7rem;
-  font-weight: 500; letter-spacing: .06em; text-transform: uppercase;
-}
+.empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--muted); font-size: .85rem; }
+.empty-icon { font-size: 2rem; margin-bottom: .5rem; }
+
+.plan-badge { padding: .25rem .65rem; border-radius: 20px; font-size: .7rem; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
 .plan-free { background: rgba(255,255,255,0.08); color: var(--muted); }
 .plan-pro { background: rgba(124,106,247,0.2); color: var(--accent); }
+.plan-super-pro { background: rgba(249,115,22,0.2); color: var(--accent2); }
 
-/* Preview widget */
-.preview-wrap { position: relative; height: 300px; background: var(--dark);
-  border-radius: 10px; border: 1px solid var(--border); overflow: hidden; }
-.preview-site { position: absolute; inset: 0; display: flex; align-items: center;
-  justify-content: center; }
-.preview-site-text { font-size: .8rem; color: var(--muted); }
-.preview-widget-demo {
-  position: absolute; bottom: 1rem; right: 1rem;
-  display: flex; flex-direction: column; align-items: flex-end; gap: .5rem;
-}
-.preview-bubble {
-  background: white; border-radius: 12px; border-bottom-right-radius: 3px;
-  padding: .6rem .85rem; font-size: .75rem; color: #333; max-width: 180px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-.preview-btn-demo {
-  width: 46px; height: 46px; border-radius: 50%; border: none;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-}
-.preview-btn-demo svg { width: 20px; height: 20px; fill: white; }
+.status-badge { padding: .2rem .55rem; border-radius: 20px; font-size: .68rem; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; }
+.status-new       { background: rgba(124,106,247,0.15); color: var(--accent); }
+.status-contacted { background: rgba(251,191,36,0.15); color: var(--yellow); }
+.status-won       { background: rgba(74,222,128,0.15); color: var(--green); }
+.status-lost      { background: rgba(248,113,113,0.15); color: var(--red); }
+.status-lead        { background: rgba(124,106,247,0.15); color: var(--accent); }
+.status-negotiating { background: rgba(251,191,36,0.15); color: var(--yellow); }
+.status-contract    { background: rgba(249,115,22,0.15); color: var(--accent2); }
+.status-closed      { background: rgba(74,222,128,0.15); color: var(--green); }
 
-/* Toast */
-.toast {
-  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(100px);
-  background: var(--card); border: 1px solid var(--border); color: white;
-  padding: .65rem 1.25rem; border-radius: 10px; font-size: .82rem;
-  transition: transform .3s; z-index: 9999;
-}
+.toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--card); border: 1px solid var(--border); color: white; padding: .65rem 1.25rem; border-radius: 10px; font-size: .82rem; transition: transform .3s; z-index: 9999; }
 .toast.show { transform: translateX(-50%) translateY(0); }
 
-@media (max-width: 768px) {
-  .features-grid, .steps, .dash-grid, .customizer-grid { grid-template-columns: 1fr; }
-  .dash-card.full { grid-column: span 1; }
-  .pricing-cards { grid-template-columns: 1fr; }
-  .field.full { grid-column: span 1; }
-}
+.data-source-item { background: var(--dark); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: .75rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.kb-item { background: var(--dark); border: 1px solid var(--border); border-radius: 8px; padding: .85rem 1rem; margin-bottom: .5rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.kb-content { font-size: .8rem; color: var(--text); line-height: 1.5; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.kb-source { font-size: .7rem; color: var(--muted); margin-top: .25rem; }
+
+.session-row { background: var(--dark); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: .75rem; cursor: pointer; transition: border-color .2s; }
+.session-row:hover { border-color: rgba(255,255,255,0.2); }
+.session-transcript { display: none; padding: .75rem 0 0; margin-top: .75rem; border-top: 1px solid var(--border); }
+.session-transcript.open { display: block; }
+.msg-bubble { padding: .5rem .75rem; border-radius: 10px; font-size: .8rem; line-height: 1.5; margin-bottom: .4rem; max-width: 80%; }
+.msg-user { background: rgba(124,106,247,0.2); color: var(--text); margin-left: auto; }
+.msg-bot  { background: rgba(255,255,255,0.06); color: var(--text); }
+
+.pipeline-stage { display: inline-flex; padding: .3rem .85rem; border-radius: 20px; font-size: .72rem; border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all .2s; }
+.pipeline-stage.active { background: var(--accent); color: white; border-color: var(--accent); }
+.pipeline-stages { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+
+.invite-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; padding-top: 5rem; }
+.invite-card { background: var(--dark); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; max-width: 420px; width: 100%; text-align: center; }
+.invite-card h2 { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700; color: white; margin-bottom: .5rem; }
+
+.spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.upgrade-plans { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.25rem; }
+.upgrade-plan { background: var(--card); border: 2px solid var(--border); border-radius: 12px; padding: 1.25rem; text-align: center; cursor: pointer; transition: border-color .2s; }
+.upgrade-plan:hover, .upgrade-plan.selected { border-color: var(--accent); background: rgba(124,106,247,0.08); }
+.upgrade-plan h4 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; color: white; }
+.upgrade-plan .up-price { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin: .25rem 0; }
+.upgrade-plan ul { list-style: none; text-align: left; margin: .75rem 0 0; }
+.upgrade-plan ul li { font-size: .78rem; color: var(--text); padding: .15rem 0; }
+.upgrade-plan ul li::before { content: '✓ '; color: var(--green); }
 
 @media (max-width: 768px) {
+  .features-grid, .steps, .dash-grid, .customizer-grid, .pricing-cards { grid-template-columns: 1fr; }
+  .dash-card.full { grid-column: span 1; }
+  .field.full { grid-column: span 1; }
+  .form-grid { grid-template-columns: 1fr; }
+  .upgrade-plans { grid-template-columns: 1fr; }
   nav { padding: .75rem 1rem; }
   .hero { padding: 5rem 1.25rem 3rem; }
   .hero h1 { font-size: 2.2rem; }
-  .hero p { font-size: .85rem; }
-  .hero-actions { flex-direction: column; align-items: center; }
-  .hero-actions .btn { width: 100%; text-align: center; }
-  .hero-stats { gap: 1.25rem; }
-  .features { padding: 3rem 1.25rem; }
-  .features-grid { grid-template-columns: 1fr; }
-  .feature-card { padding: 1.5rem 1.25rem; }
-  .how { padding: 3rem 1.25rem; }
-  .steps { grid-template-columns: 1fr; gap: 1.5rem; }
-  .pricing { padding: 3rem 1.25rem; }
-  .pricing-cards { grid-template-columns: 1fr; }
+  .features, .how, .pricing { padding: 3rem 1.25rem; }
   .dashboard { padding: 4.5rem 1rem 2rem; }
-  .dash-grid { grid-template-columns: 1fr; }
-  .dash-card.full { grid-column: span 1; }
-  .customizer-grid { grid-template-columns: 1fr; }
-  .field.full { grid-column: span 1; }
-  #darkLightControls { grid-template-columns: 1fr !important; }
-  .modal { margin: 1rem; padding: 1.5rem; }
-  .nav-logo { font-size: 1.1rem; }
-  .btn-lg { padding: .65rem 1.25rem; font-size: .82rem; }
 }
-
-
-@media (max-width: 768px) {
-  .hero-stats { 
-    display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    gap: 1rem;
-    width: 100%;
-  }
-  .stat-item { text-align: center; }
-  .hero-glow { display: none; }
-  .hero-badge { font-size: .62rem; }
-  section { padding: 3rem 1.25rem !important; }
-  .section-title { font-size: 1.8rem !important; }
-  [style*="grid-template-columns: repeat(3"] { 
-    grid-template-columns: 1fr !important; 
-  }
-  [style*="grid-template-columns:repeat(3"] { 
-    grid-template-columns: 1fr !important; 
-  }
-  [style*="max-width:900px"], 
-  [style*="max-width:700px"],
-  [style*="max-width: 900px"],
-  [style*="max-width: 700px"] { 
-    padding-left: 1.25rem !important; 
-    padding-right: 1.25rem !important; 
-  }
-  .pricing-card { padding: 1.5rem; }
-  .price-amount { font-size: 2rem; }
-  footer { padding: 2rem 1.25rem !important; }
-}
-
 </style>
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
   <div class="nav-logo">Peek<span>bot</span></div>
   <div class="nav-actions" id="navActions">
@@ -400,138 +223,44 @@ nav {
   </div>
 </nav>
 
-<!-- ── LANDING VIEW ── -->
+<!-- ─── LANDING ─── -->
 <div id="view-landing" class="view active">
-
-  <!-- Hero -->
   <section class="hero">
     <div class="hero-glow"></div>
     <div class="hero-badge">✦ AI-powered chat widget</div>
     <h1>Your website's always-on<br><span>AI front desk</span></h1>
-    <p>Add one line of code. Capture leads 24/7. Works on any website — med spas, law firms, HVAC, dental, and more.</p>
+    <p>Add one line of code. Capture leads 24/7. Works on any website.</p>
     <div class="hero-actions">
       <button class="btn btn-primary btn-lg" onclick="showModal('register')">Start Free →</button>
-      <button class="btn btn-ghost btn-lg" onclick="document.querySelector('#features').scrollIntoView({behavior:'smooth'})">See How It Works</button>
+      <button class="btn btn-ghost btn-lg" onclick="document.querySelector('#features').scrollIntoView({behavior:'smooth'})">See How</button>
     </div>
     <div class="hero-stats">
       <div class="stat-item"><div class="stat-num">1</div><div class="stat-label">Line of Code</div></div>
       <div class="stat-item"><div class="stat-num">24/7</div><div class="stat-label">Lead Capture</div></div>
-      <div class="stat-item"><div class="stat-num">Any</div><div class="stat-label">Website</div></div>
-      <div class="stat-item"><div class="stat-num">$49</div><div class="stat-label">Per Month</div></div>
+      <div class="stat-item"><div class="stat-num">$0–$249</div><div class="stat-label">Per Month</div></div>
     </div>
   </section>
 
-
-  <!-- Live Demo -->
-  <section style="padding:5rem 2rem;max-width:700px;margin:0 auto;text-align:center;" id="features">
-    <div style="font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:#7c6af7;margin-bottom:.75rem;">Try It Now</div>
-    <h2 style="font-family:'Syne',sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:700;color:white;letter-spacing:-0.02em;margin-bottom:1rem;">See how it works <span style="color:#7c6af7;">live</span></h2>
-    <p style="color:rgba(255,255,255,0.4);font-size:.9rem;margin-bottom:2.5rem;">This is a real Peekbot widget — the same one your customers will see. Try asking it about pricing or features.</p>
-    <div style="position:relative;background:#1c1c1c;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:3rem 2rem;min-height:200px;display:flex;align-items:center;justify-content:center;">
-      <p style="color:rgba(255,255,255,0.3);font-size:.85rem;">👇 Click the chat button in the bottom right</p>
-    </div>
-    <script src="https://peekbot.cana.chat/embed.js" data-token="2c7805967b2fa9ce73ad50e010115eae"></script>
-  </section>
-
-  <!-- Features -->
   <section class="features" id="features">
     <div class="section-label">What you get</div>
     <h2 class="section-title">Everything in one widget</h2>
     <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">💬</div>
-        <h3>AI Chat</h3>
-        <p>GPT-4o powered responses trained on your business. Answers questions, qualifies leads, handles FAQs — all automatically.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📥</div>
-        <h3>Lead Capture</h3>
-        <p>After a few exchanges the bot asks for name and contact info. Leads land in your dashboard and hit your email instantly.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🎨</div>
-        <h3>Fully Customizable</h3>
-        <p>Set your bot's name, color, greeting, and personality. Preview it live before you embed. Looks native on any site.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">⚡</div>
-        <h3>One Line Embed</h3>
-        <p>Copy one script tag and paste it into any website — WordPress, Squarespace, Wix, Showit, custom HTML. Done.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📊</div>
-        <h3>Conversation Dashboard</h3>
-        <p>See every conversation your bot has had. Know what visitors are asking, where they drop off, and who's converting.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📧</div>
-        <h3>Instant Email Alerts</h3>
-        <p>Every time a visitor leaves their info, you get an email. Never miss a lead even when you're away from the dashboard.</p>
-      </div>
+      <div class="feature-card"><div class="feature-icon">💬</div><h3>AI Chat</h3><p>GPT-4o powered. Trained on your business. Answers questions automatically.</p></div>
+      <div class="feature-card"><div class="feature-icon">📥</div><h3>Lead Capture</h3><p>Bot asks for contact info. Leads hit your email and dashboard instantly.</p></div>
+      <div class="feature-card"><div class="feature-icon">🎨</div><h3>Fully Customizable</h3><p>Name, colors, greeting, personality. Live preview before embedding.</p></div>
+      <div class="feature-card"><div class="feature-icon">⚡</div><h3>One Line Embed</h3><p>Script tag. Works on WordPress, Wix, Squarespace, anywhere.</p></div>
+      <div class="feature-card"><div class="feature-icon">📊</div><h3>Dashboard</h3><p>See every conversation. Know what visitors ask. Track conversions.</p></div>
+      <div class="feature-card"><div class="feature-icon">📧</div><h3>Email Alerts</h3><p>Every new lead triggers an email. Never miss a prospect.</p></div>
     </div>
   </section>
 
-  <!-- How it works -->
   <section class="how">
     <div class="section-label">Simple setup</div>
     <h2 class="section-title">Live in 3 steps</h2>
     <div class="steps">
-      <div class="step">
-        <div class="step-num">1</div>
-        <h3>Customize your bot</h3>
-        <p>Set your name, colors, greeting, and what your bot knows about your business.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <h3>Copy the embed code</h3>
-        <p>One script tag. Paste it into your website's footer. Works anywhere.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <h3>Watch leads come in</h3>
-        <p>Your bot runs 24/7. Leads show up in your dashboard and email.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Pricing -->
-
-  <!-- Trust / Security -->
-  <section style="padding:4rem 2rem;max-width:900px;margin:0 auto;text-align:center;">
-    <div style="font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:#7c6af7;margin-bottom:.75rem;">Privacy & Security</div>
-    <h2 style="font-family:'Syne',sans-serif;font-size:clamp(1.6rem,3vw,2.4rem);font-weight:700;color:white;letter-spacing:-0.02em;margin-bottom:.75rem;">We don't sell your data.<br>We don't even want it.</h2>
-    <p style="color:rgba(255,255,255,0.4);font-size:.88rem;max-width:520px;margin:0 auto 3rem;">Peekbot is a tool, not a data broker. Your conversations stay yours.</p>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.08);">
-      <div style="background:#141414;padding:2rem 1.5rem;">
-        <div style="font-size:1.5rem;margin-bottom:.75rem;">🔒</div>
-        <div style="font-family:'Syne',sans-serif;font-weight:600;color:white;margin-bottom:.5rem;">No data selling</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,0.4);line-height:1.6;">We never sell, share, or monetize your conversations or lead data. Ever.</div>
-      </div>
-      <div style="background:#141414;padding:2rem 1.5rem;">
-        <div style="font-size:1.5rem;margin-bottom:.75rem;">🗑️</div>
-        <div style="font-family:'Syne',sans-serif;font-weight:600;color:white;margin-bottom:.5rem;">You own your data</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,0.4);line-height:1.6;">Delete your account anytime and all your data — conversations, leads, bot config — is permanently removed.</div>
-      </div>
-      <div style="background:#141414;padding:2rem 1.5rem;">
-        <div style="font-size:1.5rem;margin-bottom:.75rem;">🛡️</div>
-        <div style="font-family:'Syne',sans-serif;font-weight:600;color:white;margin-bottom:.5rem;">Encrypted in transit</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,0.4);line-height:1.6;">All data is transmitted over HTTPS/TLS. Passwords are hashed and never stored in plain text.</div>
-      </div>
-      <div style="background:#141414;padding:2rem 1.5rem;">
-        <div style="font-size:1.5rem;margin-bottom:.75rem;">🚫</div>
-        <div style="font-family:'Syne',sans-serif;font-weight:600;color:white;margin-bottom:.5rem;">No third-party trackers</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,0.4);line-height:1.6;">No Google Analytics, no Facebook Pixel, no ad tracking on this site or your widget.</div>
-      </div>
-      <div style="background:#141414;padding:2rem 1.5rem;">
-        <div style="font-size:1.5rem;margin-bottom:.75rem;">📍</div>
-        <div style="font-family:'Syne',sans-serif;font-weight:600;color:white;margin-bottom:.5rem;">Hosted in the USA</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,0.4);line-height:1.6;">Your data never leaves US servers. Built and operated out of Oregon by a real human, not a faceless corporation.</div>
-      </div>
-      <div style="background:#141414;padding:2rem 1.5rem;">
-        <div style="font-size:1.5rem;margin-bottom:.75rem;">✉️</div>
-        <div style="font-family:'Syne',sans-serif;font-weight:600;color:white;margin-bottom:.5rem;">Minimal email</div>
-        <div style="font-size:.8rem;color:rgba(255,255,255,0.4);line-height:1.6;">We only email you lead alerts and occasional product updates. Unsubscribe anytime. No spam, ever.</div>
-      </div>
+      <div class="step"><div class="step-num">1</div><h3>Customize</h3><p>Set name, colors, greeting, bot personality.</p></div>
+      <div class="step"><div class="step-num">2</div><h3>Copy Code</h3><p>One script tag. Paste into website footer.</p></div>
+      <div class="step"><div class="step-num">3</div><h3>Watch Leads</h3><p>Bot runs 24/7. Leads show up in dashboard.</p></div>
     </div>
   </section>
 
@@ -543,509 +272,1177 @@ nav {
         <div class="price-name">Free</div>
         <div class="price-amount">$0 <span>/forever</span></div>
         <div class="price-desc">Try it out, no card needed.</div>
-        <ul class="price-features">
-          <li>1 bot</li>
-          <li>10 messages/month</li>
-          <li>Lead capture</li>
-          <li>Conversation dashboard</li>
-        </ul>
-        <button class="btn btn-dark" style="width:100%" onclick="showModal('register')">Get Started Free</button>
+        <ul class="price-features"><li>1 bot</li><li>10 messages/month</li><li>Lead capture</li><li>Dashboard</li></ul>
+        <button class="btn btn-dark" style="width:100%" onclick="showModal('register')">Get Started</button>
       </div>
       <div class="pricing-card featured">
         <div class="price-name">Pro</div>
         <div class="price-amount">$49 <span>/month</span></div>
-        <div class="price-desc">For businesses serious about leads.</div>
-        <ul class="price-features">
-          <li>Up to 3 bots</li>
-          <li>Unlimited messages</li>
-          <li>Lead capture + email alerts</li>
-          <li>Full conversation history</li>
-          <li>Custom personality & colors</li>
-          <li>Light & dark mode bubble colors</li>
-          <li>No "Powered by Peekbot" branding</li>
-          <li>Priority support</li>
-        </ul>
-        <button class="btn btn-primary" style="width:100%" onclick="showModal('register')">Start Free, Upgrade Later →</button>
+        <div class="price-desc">For businesses ready to grow.</div>
+        <ul class="price-features"><li>Up to 3 bots</li><li>Unlimited messages</li><li>Email alerts</li><li>Custom branding</li><li>Website scraping</li></ul>
+        <button class="btn btn-primary" style="width:100%" onclick="showModal('register')">Start Free →</button>
+      </div>
+      <div class="pricing-card featured">
+        <div class="price-name">Super Pro</div>
+        <div class="price-amount">$249 <span>/month</span></div>
+        <div class="price-desc">For brokers &amp; teams.</div>
+        <ul class="price-features"><li>Everything in Pro</li><li>Deal tracker</li><li>Contract generation</li><li>Invoice creation</li><li>Team management</li><li>QuickBooks sync</li></ul>
+        <button class="btn btn-accent2" style="width:100%" onclick="showModal('register')">Request Demo</button>
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer style="text-align:center; padding:3rem 2rem; border-top:1px solid var(--border); color:var(--muted); font-size:.8rem;">
+  <footer style="text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--muted);font-size:.8rem;">
     <div style="font-family:'Syne',sans-serif;font-weight:700;color:white;margin-bottom:.5rem;">Peek<span style="color:var(--accent)">bot</span></div>
     Powered by <a href="https://cana.chat" style="color:var(--accent);text-decoration:none;">cana.chat</a> · Oregon
   </footer>
-
 </div>
 
-<!-- ── DASHBOARD VIEW ── -->
+<!-- ─── DASHBOARD ─── -->
 <div id="view-dashboard" class="view">
   <div class="dashboard">
     <div class="dash-header">
       <div>
         <h1>Dashboard</h1>
-        <div style="font-size:.8rem;color:var(--muted);margin-top:.25rem;" id="userEmail"></div>
+        <div style="font-size:.8rem;color:var(--muted);margin-top:.25rem;" id="userEmailDisplay"></div>
       </div>
-      <div style="display:flex;gap:.75rem;align-items:center;">
+      <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
         <span class="plan-badge plan-free" id="planBadge">Free</span>
-        <button class="btn btn-ghost" id="upgradeBtn" onclick="showUpgrade()" style="display:none;">⚡ Upgrade to Pro</button>
-        <button class="btn btn-ghost" onclick="logout()">Log out</button>
+        <button class="btn btn-ghost btn-sm" id="upgradeBtn" onclick="showUpgradeModal()" style="display:none;">⚡ Upgrade</button>
       </div>
     </div>
 
-    <div class="dash-grid">
+    <div class="dash-tabs">
+      <button class="dash-tab active" onclick="switchTab('bot',this)">🤖 Bot</button>
+      <button class="dash-tab" onclick="switchTab('sources',this)">📡 Data Sources</button>
+      <button class="dash-tab" onclick="switchTab('leads',this)">📥 Leads</button>
+      <button class="dash-tab" onclick="switchTab('conversations',this)">💬 Conversations</button>
+      <button class="dash-tab" id="superProTab" onclick="switchTab('superpro',this)" style="display:none;">⚡ Super Pro</button>
+    </div>
 
-      <!-- Bot Customizer -->
-      <div class="dash-card">
-        <h3>🤖 Your Bot</h3>
-        <div class="preview-wrap" id="previewWrap">
-          <div class="preview-site"><div class="preview-site-text">Your website</div></div>
-          <div class="preview-widget-demo">
-            <div class="preview-bubble" id="previewGreeting">Hi! How can I help you?</div>
-            <button class="preview-btn-demo" id="previewBtn" style="background:#7c6af7;">
-              <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-            </button>
+    <!-- BOT TAB -->
+    <div id="tab-bot" class="tab-content">
+      <div class="dash-grid">
+        <div class="dash-card">
+          <h3>🤖 Your Bot</h3>
+          <div class="customizer-grid">
+            <div class="field"><label>Bot Name</label><input type="text" id="botName" placeholder="Assistant"/></div>
+            <div class="field"><label>Accent Color</label><input type="color" id="botColor" value="#7c6af7"/></div>
+            <div class="field full"><label>Greeting Message</label><input type="text" id="botGreeting" placeholder="Hi! How can I help?"/></div>
+            <div class="field full"><label>System Prompt</label><textarea id="botPrompt" rows="5" placeholder="You are a helpful assistant for [Business]. Help visitors with questions..."></textarea></div>
+          </div>
+          <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+            <button class="btn btn-primary" style="flex:1;" onclick="saveBot()">Save Bot</button>
+            <button class="btn btn-ghost" style="flex:1;" onclick="showOnboarding()">🚀 Auto-Setup</button>
           </div>
         </div>
-        <div style="margin-top:1.25rem;" class="customizer-grid">
-          <div class="field">
-            <label>Bot Name</label>
-            <input type="text" id="botName" placeholder="Assistant" oninput="updatePreview()" />
+
+        <div class="dash-card">
+          <h3>⚡ Embed Code</h3>
+          <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem;">Paste before your closing <code style="color:var(--accent)">&lt;/body&gt;</code> tag:</p>
+          <div class="embed-box">
+            <button class="copy-btn" onclick="copyEmbed()">Copy</button>
+            <span id="embedText"></span>
           </div>
-          <div class="field">
-            <label>Accent Color</label>
-            <div class="color-row">
-              <input type="color" id="botColor" value="#7c6af7" oninput="updatePreview()" />
-              <div class="color-swatch" style="background:#7c6af7;" onclick="setColor('#7c6af7')"></div>
-              <div class="color-swatch" style="background:#f97316;" onclick="setColor('#f97316')"></div>
-              <div class="color-swatch" style="background:#111111;" onclick="setColor('#111111')"></div>
-              <div class="color-swatch" style="background:#0ea5e9;" onclick="setColor('#0ea5e9')"></div>
-              <div class="color-swatch" style="background:#c4866a;" onclick="setColor('#c4866a')"></div>
+          <h3 style="margin-top:1.5rem;">📊 Stats</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-top:1rem;">
+            <div style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
+              <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700;color:white;" id="statLeads">—</div>
+              <div style="font-size:.7rem;color:var(--muted);">Leads</div>
             </div>
-          </div>
-          <div id="darkLightControls" style="display:none;grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-            <div class="field">
-              <label>Chat Bubble — Light Mode</label>
-              <div class="color-row">
-                <input type="color" id="botColorLight" value="#ffffff" />
-                <span style="font-size:.72rem;color:var(--muted);">Light mode background</span>
-              </div>
+            <div style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
+              <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700;color:white;" id="statConvos">—</div>
+              <div style="font-size:.7rem;color:var(--muted);">Chats</div>
             </div>
-            <div class="field">
-              <label>Chat Bubble — Dark Mode</label>
-              <div class="color-row">
-                <input type="color" id="botColorDark" value="#1c1c1c" />
-                <span style="font-size:.72rem;color:var(--muted);">Dark mode background</span>
-              </div>
+            <div style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
+              <div style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:white;" id="statPlan">Free</div>
+              <div style="font-size:.7rem;color:var(--muted);">Plan</div>
             </div>
-          </div>
-          <div id="proUpgradeHint" style="display:none;grid-column:span 2;background:rgba(124,106,247,0.08);border:1px solid rgba(124,106,247,0.2);border-radius:8px;padding:.75rem;font-size:.78rem;color:var(--accent);">
-            ⚡ <b>Pro feature:</b> Light/dark mode colors, 3 bots, no branding. <span style="cursor:pointer;text-decoration:underline;" onclick="showUpgrade()">Upgrade →</span>
-          </div>
-          <div class="field full">
-            <label>Greeting Message</label>
-            <input type="text" id="botGreeting" placeholder="Hi! How can I help you today?" oninput="updatePreview()" />
-          </div>
-          <div class="field full">
-            <label>System Prompt (what your bot knows)</label>
-            <textarea id="botPrompt" rows="4" placeholder="You are a helpful assistant for [Business Name]. We offer [services]..."></textarea>
-          </div>
-        </div>
-        <button class="btn btn-primary" style="width:100%;margin-top:.5rem;" onclick="saveBot()">Save Changes</button>
-      </div>
-
-      <!-- Multiple Bots (Pro) -->
-      <div class="dash-card full" id="botsSection" style="display:none;">
-        <h3>🤖 Your Bots <button class="btn btn-primary" style="font-size:.7rem;padding:.3rem .75rem;margin-left:.5rem;" onclick="createBot()">+ New Bot</button></h3>
-        <div id="botsContainer"></div>
-      </div>
-
-      <!-- Embed Code -->
-      <div class="dash-card" style="display:flex;flex-direction:column;gap:1rem;">
-        <h3>⚡ Embed Code</h3>
-        <p style="font-size:.82rem;color:var(--muted);">Paste this into your website's <code style="color:#7dd3fc;">&lt;/body&gt;</code> tag:</p>
-        <div class="embed-box" id="embedCode">
-          <button class="copy-btn" onclick="copyEmbed()">Copy</button>
-          <span id="embedText"></span>
-        </div>
-        <div style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:1rem;">
-          <div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;">WordPress / Wix / Squarespace</div>
-          <div style="font-size:.8rem;color:var(--text);line-height:1.7;">
-            Paste the embed code into your site's <strong>custom HTML</strong> or <strong>footer code</strong> section. That's it — your bot goes live instantly.
-          </div>
-        </div>
-
-        <h3 style="margin-top:.5rem;">📬 Quick Stats</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;">
-          <div style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
-            <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700;color:white;" id="statLeads">0</div>
-            <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">Leads</div>
-          </div>
-          <div style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
-            <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700;color:white;" id="statConvos">0</div>
-            <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">Chats</div>
-          </div>
-          <div style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
-            <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700;color:white;" id="statPlan">Free</div>
-            <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">Plan</div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Leads -->
+    <!-- SOURCES TAB -->
+    <div id="tab-sources" class="tab-content" style="display:none;">
       <div class="dash-card full">
-        <h3>📥 Leads <button class="btn btn-ghost" style="font-size:.7rem;padding:.25rem .6rem;margin-left:.5rem;" onclick="loadLeads()">Refresh</button></h3>
-        <div id="leadsContainer"><div class="empty-state">No leads yet — your bot will capture them automatically.</div></div>
-      </div>
+        <h3>📡 Data Sources</h3>
+        <p style="font-size:.85rem;color:var(--text);margin-bottom:1rem;">Sync websites or APIs — content is automatically added to your bot's knowledge base.</p>
+        <div style="display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+          <button class="btn btn-accent2" onclick="showSourceForm()">+ Add Source</button>
+          <button class="btn btn-ghost" onclick="loadDataSources()">Refresh</button>
+        </div>
 
-      <!-- Conversations -->
+        <div id="sourceFormContainer" style="display:none;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1.5rem;">
+          <div style="font-weight:600;color:white;font-size:.9rem;margin-bottom:.75rem;">Add Data Source</div>
+          <div class="form-grid">
+            <div class="form-group"><label>Type</label>
+              <select id="sourceType" onchange="toggleSourceFields()">
+                <option value="">Select type...</option>
+                <option value="website">Website URL</option>
+                <option value="mls">MLS / API</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Name</label><input type="text" id="sourceName" placeholder="e.g. Main Website"/></div>
+          </div>
+          <div class="form-group" id="urlField" style="display:none;"><label>URL</label><input type="url" id="sourceUrl" placeholder="https://example.com"/></div>
+          <div class="form-group" id="apiKeyField" style="display:none;"><label>API Key (optional)</label><input type="text" id="sourceApiKey" placeholder="Your API key"/></div>
+          <div style="display:flex;gap:.5rem;">
+            <button class="btn btn-accent2" onclick="createDataSource()">Add &amp; Sync</button>
+            <button class="btn btn-ghost" onclick="hideSourceForm()">Cancel</button>
+          </div>
+        </div>
+
+        <div id="sourcesContainer"><div class="empty-state" style="padding:1rem 0;"><div class="empty-icon">📡</div>No data sources yet.</div></div>
+
+        <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+            <div style="font-family:'Syne',sans-serif;font-size:.82rem;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;">📚 Knowledge Base</div>
+            <button class="btn btn-ghost btn-sm" onclick="toggleAddKnowledge()">+ Add Manually</button>
+          </div>
+          <div id="addKnowledgeForm" style="display:none;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.75rem;">
+            <div class="form-group"><label>Content</label><textarea id="manualKbContent" rows="3" placeholder="Paste text, FAQs, product info..."></textarea></div>
+            <div style="display:flex;gap:.5rem;">
+              <button class="btn btn-primary btn-sm" onclick="addManualKnowledge()">Save</button>
+              <button class="btn btn-ghost btn-sm" onclick="toggleAddKnowledge()">Cancel</button>
+            </div>
+          </div>
+          <div id="knowledgeContainer"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEADS TAB -->
+    <div id="tab-leads" class="tab-content" style="display:none;">
       <div class="dash-card full">
-        <h3>💬 Conversations <button class="btn btn-ghost" style="font-size:.7rem;padding:.25rem .6rem;margin-left:.5rem;" onclick="loadConvos()">Refresh</button></h3>
-        <div id="convosContainer"><div class="empty-state">No conversations yet.</div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem;">
+          <h3 style="margin-bottom:0;">📥 Leads</h3>
+          <div style="display:flex;gap:.5rem;">
+            <button class="btn btn-ghost btn-sm" onclick="loadLeads()">Refresh</button>
+            <button class="btn btn-ghost btn-sm" id="exportLeadsBtn" onclick="exportLeads()" style="display:none;">Export CSV</button>
+          </div>
+        </div>
+        <div id="leadsContainer"><div class="empty-state"><div class="empty-icon">📥</div>No leads yet. Share your embed code to start capturing leads.</div></div>
       </div>
+    </div>
 
+    <!-- CONVERSATIONS TAB -->
+    <div id="tab-conversations" class="tab-content" style="display:none;">
+      <div class="dash-card full">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+          <h3 style="margin-bottom:0;">💬 Conversations</h3>
+          <button class="btn btn-ghost btn-sm" onclick="loadConvos()">Refresh</button>
+        </div>
+        <div id="convosContainer"><div class="empty-state"><div class="empty-icon">💬</div>No conversations yet.</div></div>
+      </div>
+    </div>
+
+    <!-- SUPER PRO TAB -->
+    <div id="tab-superpro" class="tab-content" style="display:none;">
+      <div class="dash-grid">
+        <div class="dash-card full super-pro-section">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+            <h4>🔑 Deal Tracker</h4>
+            <button class="btn btn-accent2 btn-sm" onclick="openDealModal(null)">+ New Deal</button>
+          </div>
+          <div class="pipeline-stages" id="dealFilter">
+            <div class="pipeline-stage active" onclick="filterDeals('all',this)">All</div>
+            <div class="pipeline-stage" onclick="filterDeals('lead',this)">Lead</div>
+            <div class="pipeline-stage" onclick="filterDeals('negotiating',this)">Negotiating</div>
+            <div class="pipeline-stage" onclick="filterDeals('contract',this)">Contract</div>
+            <div class="pipeline-stage" onclick="filterDeals('closed',this)">Closed</div>
+          </div>
+          <div id="dealsContainer"><div class="empty-state" style="padding:1rem 0;"><div class="empty-icon">🔑</div>No deals yet.</div></div>
+        </div>
+
+        <div class="dash-card super-pro-section">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+            <h4>👥 Team</h4>
+            <button class="btn btn-ghost btn-sm" onclick="showInviteModal()">Invite</button>
+          </div>
+          <div id="teamContainer"><div style="color:var(--muted);font-size:.82rem;">Loading...</div></div>
+        </div>
+
+        <div class="dash-card super-pro-section">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+            <h4>📄 Documents</h4>
+            <button class="btn btn-ghost btn-sm" onclick="showGenerateDocModal()">Generate</button>
+          </div>
+          <div id="docsContainer"><div class="empty-state" style="padding:.5rem;">No documents.</div></div>
+        </div>
+
+        <div class="dash-card super-pro-section">
+          <h4>📊 QuickBooks</h4>
+          <p style="font-size:.82rem;color:var(--text);margin-bottom:.75rem;">Auto-sync customers from QuickBooks Online into your Leads.</p>
+          <div id="qbStatus" style="margin-bottom:.75rem;font-size:.82rem;color:var(--muted);">Checking connection…</div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <button class="btn btn-accent2 btn-sm" id="qbConnectBtn" onclick="connectQuickBooks()" style="display:none;">🔗 Connect QuickBooks</button>
+            <button class="btn btn-ghost btn-sm" id="qbSyncBtn" onclick="syncQuickBooks()" style="display:none;">🔄 Sync Now</button>
+            <button class="btn btn-danger btn-sm" id="qbDisconnectBtn" onclick="disconnectQuickBooks()" style="display:none;font-size:.72rem;">Disconnect</button>
+          </div>
+          <div id="qbSyncResult" style="margin-top:.6rem;font-size:.78rem;color:var(--accent2);display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─── ACCEPT INVITE ─── -->
+<div id="view-accept-invite" class="view">
+  <div class="invite-page">
+    <div class="invite-card">
+      <div style="font-size:2.5rem;margin-bottom:1rem;">🎉</div>
+      <h2 id="inviteTitle">You're Invited!</h2>
+      <p id="inviteSubtitle" style="color:var(--muted);font-size:.85rem;margin:.5rem 0 1.5rem;"></p>
+      <div id="inviteForm">
+        <div class="form-group" style="text-align:left;"><label>Your Name</label><input type="text" id="inviteName" placeholder="Jane Smith"/></div>
+        <div class="form-group" style="text-align:left;"><label>Email</label><input type="email" id="inviteEmail" placeholder="you@example.com"/></div>
+        <div class="form-group" style="text-align:left;"><label>Create Password</label><input type="password" id="invitePassword" placeholder="••••••••" onkeypress="if(event.key==='Enter')submitAcceptInvite()"/></div>
+        <div class="modal-error" id="inviteError" style="text-align:left;"></div>
+        <button class="btn btn-primary" style="width:100%;margin-top:.75rem;padding:.75rem;" onclick="submitAcceptInvite()">Accept &amp; Join →</button>
+      </div>
+      <div id="inviteSuccess" style="display:none;color:var(--green);font-size:.9rem;margin-top:1rem;">✓ Account created! Taking you to the dashboard...</div>
     </div>
   </div>
 </div>
 
-<!-- ── AUTH MODAL ── -->
+<!-- ─── AUTH MODAL ─── -->
 <div class="modal-overlay" id="authModal">
   <div class="modal">
-    <h2 id="modalTitle">Get Started</h2>
-    <p id="modalSub">Create your free account</p>
-    <div class="form-group" id="nameGroup">
-      <label>Your Name</label>
-      <input type="text" id="authName" placeholder="Jane Smith" />
-    </div>
-    <div class="form-group">
-      <label>Email</label>
-      <input type="email" id="authEmail" placeholder="you@business.com" />
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="authPassword" placeholder="••••••••" onkeypress="if(event.key==='Enter')submitAuth()" />
-    </div>
+    <h2 id="modalTitle">Get Started Free</h2>
+    <p id="modalSub">Create your account</p>
+    <div class="form-group" id="nameGroup"><label>Your Name</label><input type="text" id="authName" placeholder="Jane Smith"/></div>
+    <div class="form-group"><label>Email</label><input type="email" id="authEmail" placeholder="you@business.com"/></div>
+    <div class="form-group"><label>Password</label><input type="password" id="authPassword" placeholder="••••••••" onkeypress="if(event.key==='Enter')submitAuth()"/></div>
     <div class="modal-error" id="authError"></div>
     <div class="modal-footer">
       <div class="modal-switch" id="modalSwitch">Already have an account? <span onclick="showModal('login')">Log in</span></div>
       <button class="btn btn-primary" onclick="submitAuth()">Continue →</button>
     </div>
-    <button onclick="closeModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;">✕</button>
+    <button class="modal-close" onclick="closeModal()">✕</button>
   </div>
 </div>
 
-<!-- ── UPGRADE MODAL ── -->
-<div class="modal-overlay" id="upgradeModal">
-  <div class="modal" style="max-width:420px;">
-    <h2>Upgrade to Pro</h2>
-    <p>$49/month — unlimited messages, email alerts, full history</p>
-    <div style="background:var(--card);border-radius:10px;padding:1.25rem;margin:1rem 0;">
-      <div id="paypal-button-container"></div>
+<!-- ─── ONBOARDING MODAL ─── -->
+<div class="modal-overlay" id="onboardingModal">
+  <div class="modal" style="max-width:520px;overflow-y:auto;max-height:90vh;">
+    <h2>Set Up Your Bot 🚀</h2>
+    <p>Chat with our setup assistant — it'll configure everything automatically.</p>
+    <div id="setupChatArea" style="display:flex;flex-direction:column;gap:.6rem;max-height:280px;overflow-y:auto;padding:.25rem 0;"></div>
+    <div style="display:flex;gap:.5rem;margin-top:.75rem;">
+      <input type="text" id="setupInput" placeholder="Type your answer..." style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.6rem .85rem;color:white;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;" onkeypress="if(event.key==='Enter')sendSetupMessage()"/>
+      <button class="btn btn-primary" onclick="sendSetupMessage()">Send</button>
     </div>
-    <button onclick="document.getElementById('upgradeModal').classList.remove('active')" 
-      style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.82rem;width:100%;text-align:center;">
-      Maybe later
-    </button>
+    <button class="modal-close" onclick="closeOnboarding()">✕</button>
   </div>
 </div>
 
-<!-- Toast -->
+<!-- ─── DEAL MODAL ─── -->
+<div class="modal-overlay" id="dealModal">
+  <div class="modal modal-lg" style="overflow-y:auto;max-height:92vh;">
+    <h2 id="dealModalTitle">New Deal</h2>
+    <p>Track a deal through the pipeline from lead to close.</p>
+    <input type="hidden" id="dealId"/>
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:span 2;"><label>Deal Name</label><input type="text" id="dealName" placeholder="e.g. 123 Main St — Smith Purchase"/></div>
+      <div class="form-group" style="grid-column:span 2;"><label>Property Address</label><input type="text" id="dealAddress" placeholder="123 Main St, Portland OR"/></div>
+      <div class="form-group"><label>Buyer Name</label><input type="text" id="dealBuyerName" placeholder="John Smith"/></div>
+      <div class="form-group"><label>Buyer Email</label><input type="email" id="dealBuyerEmail" placeholder="john@example.com"/></div>
+      <div class="form-group"><label>Seller Name</label><input type="text" id="dealSellerName" placeholder="Jane Doe"/></div>
+      <div class="form-group"><label>Seller Email</label><input type="email" id="dealSellerEmail" placeholder="jane@example.com"/></div>
+      <div class="form-group"><label>Purchase Price ($)</label><input type="number" id="dealPrice" placeholder="500000"/></div>
+      <div class="form-group"><label>Commission ($)</label><input type="number" id="dealCommission" placeholder="15000"/></div>
+      <div class="form-group"><label>Earnest Money ($)</label><input type="number" id="dealEarnest" placeholder="5000"/></div>
+      <div class="form-group"><label>Closing Date</label><input type="date" id="dealClosing"/></div>
+      <div class="form-group"><label>Status</label>
+        <select id="dealStatus">
+          <option value="lead">Lead</option>
+          <option value="negotiating">Negotiating</option>
+          <option value="contract">Under Contract</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+      <div class="form-group"><label>&nbsp;</label></div>
+      <div class="form-group" style="grid-column:span 2;"><label>Notes</label><textarea id="dealNotes" rows="2" placeholder="Any notes..."></textarea></div>
+    </div>
+    <div style="display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveDeal()">Save Deal</button>
+      <button class="btn btn-ghost" onclick="closeDealModal()">Cancel</button>
+      <button class="btn btn-danger" id="dealDeleteBtn" style="display:none;" onclick="deleteDeal()">Delete</button>
+    </div>
+    <button class="modal-close" onclick="closeDealModal()">✕</button>
+  </div>
+</div>
+
+<!-- ─── LEAD DETAIL MODAL ─── -->
+<div class="modal-overlay" id="leadModal">
+  <div class="modal">
+    <h2>Lead Detail</h2>
+    <input type="hidden" id="leadModalId"/>
+    <div style="background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:1rem;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;font-size:.82rem;">
+        <div><div style="color:var(--muted);font-size:.72rem;margin-bottom:.1rem;">NAME</div><div id="leadModalName" style="color:white;font-weight:500;"></div></div>
+        <div><div style="color:var(--muted);font-size:.72rem;margin-bottom:.1rem;">EMAIL</div><div id="leadModalEmail" style="color:white;"></div></div>
+        <div><div style="color:var(--muted);font-size:.72rem;margin-bottom:.1rem;">PHONE</div><div id="leadModalPhone" style="color:white;"></div></div>
+        <div><div style="color:var(--muted);font-size:.72rem;margin-bottom:.1rem;">DATE</div><div id="leadModalDate" style="color:white;"></div></div>
+      </div>
+    </div>
+    <div class="form-group"><label>Status</label>
+      <select id="leadModalStatus">
+        <option value="new">New</option>
+        <option value="contacted">Contacted</option>
+        <option value="won">Won</option>
+        <option value="lost">Lost</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Notes</label><textarea id="leadModalNotes" rows="3" placeholder="Add notes..."></textarea></div>
+    <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveLeadDetail()">Save</button>
+      <button class="btn btn-ghost" onclick="closeLeadModal()">Close</button>
+    </div>
+    <button class="modal-close" onclick="closeLeadModal()">✕</button>
+  </div>
+</div>
+
+<!-- ─── UPGRADE MODAL ─── -->
+<div class="modal-overlay" id="upgradeModal">
+  <div class="modal modal-lg">
+    <h2>Upgrade Peekbot</h2>
+    <p>Choose the plan that fits your business.</p>
+    <div class="upgrade-plans">
+      <div class="upgrade-plan selected" id="proPlan" onclick="selectUpgradePlan('pro',this)">
+        <h4>Pro</h4>
+        <div class="up-price">$49<span style="font-size:.85rem;color:var(--muted);">/mo</span></div>
+        <ul>
+          <li>Unlimited messages</li>
+          <li>Up to 3 bots</li>
+          <li>Email alerts</li>
+          <li>Website scraping</li>
+        </ul>
+      </div>
+      <div class="upgrade-plan" id="superPlan" onclick="selectUpgradePlan('super_pro',this)">
+        <h4>Super Pro</h4>
+        <div class="up-price" style="color:var(--accent2);">$249<span style="font-size:.85rem;color:var(--muted);">/mo</span></div>
+        <ul>
+          <li>Everything in Pro</li>
+          <li>Deal tracker</li>
+          <li>Contract &amp; invoice gen</li>
+          <li>Team management</li>
+        </ul>
+      </div>
+    </div>
+    <div id="upgradeStatus" style="font-size:.82rem;color:var(--muted);margin-top:.75rem;min-height:1.2em;text-align:center;"></div>
+    <div style="display:flex;gap:.5rem;margin-top:1rem;">
+      <button class="btn btn-primary" style="flex:1;" onclick="doUpgrade()">Upgrade Now →</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('upgradeModal').classList.remove('active')">Cancel</button>
+    </div>
+    <button class="modal-close" onclick="document.getElementById('upgradeModal').classList.remove('active')">✕</button>
+  </div>
+</div>
+
+<!-- ─── INVITE MODAL ─── -->
+<div class="modal-overlay" id="inviteModal">
+  <div class="modal">
+    <h2>Invite Team Member</h2>
+    <p>They'll get an email with a link to create their account.</p>
+    <div class="form-group"><label>Email Address</label><input type="email" id="inviteTeamEmail" placeholder="agent@example.com"/></div>
+    <div class="form-group"><label>Role</label>
+      <select id="inviteTeamRole"><option value="agent">Agent</option><option value="admin">Admin</option></select>
+    </div>
+    <div class="modal-error" id="inviteTeamError"></div>
+    <div style="display:flex;gap:.5rem;margin-top:1rem;">
+      <button class="btn btn-primary" style="flex:1;" onclick="sendInvite()">Send Invite</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('inviteModal').classList.remove('active')">Cancel</button>
+    </div>
+    <button class="modal-close" onclick="document.getElementById('inviteModal').classList.remove('active')">✕</button>
+  </div>
+</div>
+
+<!-- ─── GENERATE DOC MODAL ─── -->
+<div class="modal-overlay" id="generateDocModal">
+  <div class="modal">
+    <h2>Generate Document</h2>
+    <p>AI-generated contracts and invoices in seconds.</p>
+    <div class="form-group"><label>Type</label>
+      <select id="genDocType"><option value="contract">Contract</option><option value="invoice">Invoice</option></select>
+    </div>
+    <div class="form-group"><label>Title</label><input type="text" id="genDocTitle" placeholder="e.g. Purchase Agreement — 123 Main St"/></div>
+    <div class="form-group"><label>Details / Context</label><textarea id="genDocDetails" rows="4" placeholder="Paste deal info, parties, terms, amounts..."></textarea></div>
+    <div id="genDocStatus" style="font-size:.82rem;color:var(--muted);margin-top:.5rem;min-height:1em;"></div>
+    <div style="display:flex;gap:.5rem;margin-top:.75rem;">
+      <button class="btn btn-primary" style="flex:1;" onclick="generateDoc()">Generate</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('generateDocModal').classList.remove('active')">Cancel</button>
+    </div>
+    <button class="modal-close" onclick="document.getElementById('generateDocModal').classList.remove('active')">✕</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<script src="https://www.paypal.com/sdk/js?client-id=Ae_QcLY1sOCZd71-iAM13rQMCpszglz0PgNswUgEcV9p5iuRda2H2yY-wXJycu2NmhukQMmjZBwhRKY5&vault=true&intent=subscription"></script>
-
 <script>
+// ─── STATE ───
 const API = '';
-let authMode = 'register';
-let userToken = localStorage.getItem('pb_token');
-let userPlan = localStorage.getItem('pb_plan') || 'free';
-let botToken = '';
+let authMode     = 'register';
+let userToken    = localStorage.getItem('pb_token');
+let currentUser  = null;
+let allLeads     = [];
+let allDeals     = [];
+let dealFilter   = 'all';
+let selectedUpgradePlan = 'pro';
+let inviteToken  = null;
+let setupMessages = [];
 
-// ── INIT ──
-window.onload = function() {
-  if (userToken) {
-    showDashboard();
+// ─── BOOT ───
+window.addEventListener('load', async () => {
+  if (window.location.pathname === '/accept-invite') {
+    showView('accept-invite');
+    const tok = new URLSearchParams(window.location.search).get('token');
+    if (tok) {
+      inviteToken = tok;
+      document.getElementById('inviteSubtitle').textContent = "You've been invited to join a Peekbot organization.";
+    } else {
+      document.getElementById('inviteTitle').textContent = 'Invalid Link';
+      document.getElementById('inviteSubtitle').textContent = 'This invitation link is invalid or has expired.';
+      document.getElementById('inviteForm').style.display = 'none';
+    }
+    return;
   }
-};
+  if (userToken) {
+    try {
+      const r = await fetch(API + '/api/me', {headers:{Authorization:'Bearer '+userToken}});
+      if (r.ok) {
+        currentUser = await r.json();
+        await showDashboard();
+        return;
+      }
+    } catch(e) {}
+    logout();
+  }
+});
 
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+  }
+});
+
+// ─── VIEWS ───
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + id).classList.add('active');
 }
 
-function scrollTo(sel) {
-  document.querySelector(sel).scrollIntoView({behavior:'smooth'});
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+  document.getElementById('tab-' + name).style.display = 'block';
+  document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (name === 'sources')      { loadDataSources(); loadKnowledge(); }
+  if (name === 'leads')        loadLeads();
+  if (name === 'conversations')loadConvos();
+  if (name === 'superpro')     { loadDeals(); loadTeam(); loadDocs(); loadQBStatus(); }
 }
 
-// ── AUTH ──
+// ─── AUTH ───
 function showModal(mode) {
   authMode = mode;
   document.getElementById('authModal').classList.add('active');
-  document.getElementById('modalTitle').textContent = mode === 'register' ? 'Get Started Free' : 'Welcome back';
-  document.getElementById('modalSub').textContent = mode === 'register' ? 'Create your free account' : 'Log in to your dashboard';
+  document.getElementById('modalTitle').textContent  = mode === 'register' ? 'Get Started Free' : 'Welcome back';
+  document.getElementById('modalSub').textContent    = mode === 'register' ? 'Create your account' : 'Log in to your dashboard';
   document.getElementById('nameGroup').style.display = mode === 'register' ? 'block' : 'none';
-  document.getElementById('modalSwitch').innerHTML = mode === 'register'
+  document.getElementById('modalSwitch').innerHTML   = mode === 'register'
     ? 'Already have an account? <span onclick="showModal(\'login\')">Log in</span>'
-    : "Don't have an account? <span onclick=\"showModal('register')\">Sign up</span>";
+    : 'No account? <span onclick="showModal(\'register\')">Sign up free</span>';
   document.getElementById('authError').style.display = 'none';
 }
 
-function closeModal() {
-  document.getElementById('authModal').classList.remove('active');
-}
+function closeModal() { document.getElementById('authModal').classList.remove('active'); }
 
 async function submitAuth() {
-  const email = document.getElementById('authEmail').value;
-  const password = document.getElementById('authPassword').value;
-  const name = document.getElementById('authName').value;
+  const email = document.getElementById('authEmail').value.trim();
+  const pw    = document.getElementById('authPassword').value;
+  const name  = document.getElementById('authName').value.trim();
   const errEl = document.getElementById('authError');
-
-  if (!email || !password) { errEl.textContent = 'Please fill all fields'; errEl.style.display = 'block'; return; }
-
+  errEl.style.display = 'none';
+  if (!email || !pw) { errEl.textContent = 'Please fill all fields.'; errEl.style.display = 'block'; return; }
   const endpoint = authMode === 'register' ? '/api/register' : '/api/login';
-  const body = authMode === 'register' ? {email, password, name} : {email, password};
-
+  const body     = authMode === 'register' ? {email, password:pw, name} : {email, password:pw};
   try {
-    const res = await fetch(API + endpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    const res  = await fetch(API + endpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
     const data = await res.json();
     if (data.error) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
     localStorage.setItem('pb_token', data.token);
-    localStorage.setItem('pb_plan', data.plan || 'free');
-    localStorage.setItem('pb_email', data.email);
-    userToken = data.token;
-    userPlan = data.plan || 'free';
+    userToken = data.token; currentUser = data;
     closeModal();
-    showDashboard();
-  } catch(e) {
-    errEl.textContent = 'Something went wrong. Try again.';
-    errEl.style.display = 'block';
-  }
+    await showDashboard();
+    if (authMode === 'register') setTimeout(showOnboarding, 400);
+  } catch(e) { errEl.textContent = 'Connection error.'; errEl.style.display = 'block'; }
 }
 
 function logout() {
   localStorage.removeItem('pb_token');
-  localStorage.removeItem('pb_plan');
-  localStorage.removeItem('pb_email');
-  userToken = null;
+  userToken = null; currentUser = null;
   showView('landing');
-  document.getElementById('navActions').innerHTML = `
-    <button class="btn btn-ghost" onclick="showModal('login')">Log in</button>
-    <button class="btn btn-primary" onclick="showModal('register')">Get Started Free</button>`;
+  document.getElementById('navActions').innerHTML =
+    '<button class="btn btn-ghost" onclick="showModal(\'login\')">Log in</button>' +
+    '<button class="btn btn-primary" onclick="showModal(\'register\')">Get Started Free</button>';
 }
 
-// ── DASHBOARD ──
+// ─── DASHBOARD ───
 async function showDashboard() {
   showView('dashboard');
-  const email = localStorage.getItem('pb_email') || '';
-  document.getElementById('userEmail').textContent = email;
-  document.getElementById('navActions').innerHTML = `
-    <button class="btn btn-ghost" onclick="logout()">Log out</button>`;
+  if (!currentUser) {
+    const r = await fetch(API + '/api/me', {headers:{Authorization:'Bearer '+userToken}});
+    if (!r.ok) { logout(); return; }
+    currentUser = await r.json();
+  }
+  const plan = currentUser.plan || 'free';
+  document.getElementById('userEmailDisplay').textContent = currentUser.email || '';
+  document.getElementById('navActions').innerHTML = '<button class="btn btn-ghost btn-sm" onclick="logout()">Log out</button>';
 
-  // Load bot
+  const badge = document.getElementById('planBadge');
+  badge.textContent = plan === 'super_pro' ? 'Super Pro' : (plan === 'pro' ? 'Pro' : 'Free');
+  badge.className   = 'plan-badge ' + (plan === 'super_pro' ? 'plan-super-pro' : (plan === 'pro' ? 'plan-pro' : 'plan-free'));
+  document.getElementById('statPlan').textContent = badge.textContent;
+  document.getElementById('upgradeBtn').style.display  = plan === 'super_pro' ? 'none' : 'inline-flex';
+  document.getElementById('superProTab').style.display = plan === 'super_pro' ? 'block' : 'none';
+
   try {
-    const res = await fetch(API + '/api/bot', {headers: {'Authorization': 'Bearer ' + userToken}});
-    const bot = await res.json();
-    botToken = bot.token;
-    document.getElementById('botName').value = bot.name || '';
-    document.getElementById('botGreeting').value = bot.greeting || '';
-    document.getElementById('botPrompt').value = bot.system_prompt || '';
-    document.getElementById('botColor').value = bot.color || '#7c6af7';
-    document.getElementById('botColorLight').value = bot.color_light || '#ffffff';
-    document.getElementById('botColorDark').value = bot.color_dark || '#1c1c1c';
-    updatePreview();
-    updateEmbedCode();
-  } catch(e) {}
+    const r   = await fetch(API + '/api/bot', {headers:{Authorization:'Bearer '+userToken}});
+    const bot = await r.json();
+    if (!bot.error) {
+      document.getElementById('botName').value    = bot.name    || '';
+      document.getElementById('botGreeting').value= bot.greeting|| '';
+      document.getElementById('botPrompt').value  = bot.system_prompt || '';
+      document.getElementById('botColor').value   = bot.color   || '#7c6af7';
+      updateEmbedCode(bot.token);
+      if (!bot.name && !bot.system_prompt) setTimeout(showOnboarding, 600);
+    } else {
+      updateEmbedCode(currentUser.bot_token);
+    }
+  } catch(e) { updateEmbedCode(currentUser.bot_token); }
 
-  // Plan
-  updatePlanUI(userPlan);
   loadLeads();
   loadConvos();
 }
 
-function updatePlanUI(plan) {
-  const badge = document.getElementById('planBadge');
-  const upgradeBtn = document.getElementById('upgradeBtn');
-  const statPlan = document.getElementById('statPlan');
-  badge.textContent = plan === 'pro' ? 'Pro' : 'Free';
-  badge.className = 'plan-badge ' + (plan === 'pro' ? 'plan-pro' : 'plan-free');
-  statPlan.textContent = plan === 'pro' ? 'Pro' : 'Free';
-  upgradeBtn.style.display = plan === 'pro' ? 'none' : 'flex';
-}
-
-function updatePreview() {
-  const name = document.getElementById('botName').value || 'Assistant';
-  const greeting = document.getElementById('botGreeting').value || 'Hi! How can I help you?';
-  const color = document.getElementById('botColor').value || '#7c6af7';
-  document.getElementById('previewGreeting').textContent = greeting;
-  document.getElementById('previewBtn').style.background = color;
-}
-
-function setColor(c) {
-  document.getElementById('botColor').value = c;
-  updatePreview();
-}
-
-function updateEmbedCode() {
-  const code = `<script src="https://peekbot.cana.chat/embed.js" data-token="${botToken}"><\/script>`;
-  document.getElementById('embedText').textContent = code;
+function updateEmbedCode(tok) {
+  const t = tok || currentUser?.bot_token || '';
+  document.getElementById('embedText').textContent =
+    `<script src="https://peekbot.cana.chat/embed.js" data-token="${t}"><\/script>`;
 }
 
 function copyEmbed() {
-  const code = document.getElementById('embedText').textContent;
-  navigator.clipboard.writeText(code);
-  showToast('Embed code copied! ✓');
+  navigator.clipboard.writeText(document.getElementById('embedText').textContent);
+  showToast('Copied! ✓');
 }
 
 async function saveBot() {
   const data = {
-    name: document.getElementById('botName').value,
-    greeting: document.getElementById('botGreeting').value,
+    name:          document.getElementById('botName').value,
+    greeting:      document.getElementById('botGreeting').value,
     system_prompt: document.getElementById('botPrompt').value,
-    color: document.getElementById('botColor').value,
-    color_light: document.getElementById('botColorLight').value,
-    color_dark: document.getElementById('botColorDark').value,
-    lead_capture: 1
+    color:         document.getElementById('botColor').value,
+    lead_capture:  1
   };
   try {
-    const res = await fetch(API + '/api/bot', {
-      method: 'PUT',
-      headers: {'Authorization': 'Bearer ' + userToken, 'Content-Type': 'application/json'},
-      body: JSON.stringify(data)
-    });
-    await res.json();
-    showToast('Bot saved! ✓');
-    updatePreview();
-  } catch(e) { showToast('Error saving bot'); }
+    const r = await fetch(API + '/api/bot', {method:'PUT', headers:{Authorization:'Bearer '+userToken,'Content-Type':'application/json'}, body:JSON.stringify(data)});
+    if (r.ok) { const bot = await r.json(); updateEmbedCode(bot.token); showToast('Saved! ✓'); }
+    else showToast('Error saving');
+  } catch(e) { showToast('Error'); }
 }
 
+// ─── ONBOARDING (LLM-backed) ───
+function showOnboarding() {
+  setupMessages = [];
+  document.getElementById('setupChatArea').innerHTML = '';
+  document.getElementById('setupInput').value = '';
+  document.getElementById('onboardingModal').classList.add('active');
+  addSetupBubble("Hi! 👋 I'm your Peekbot setup assistant. Let's get your AI chat widget configured.\n\nFirst — what's your business called?", 'bot');
+  setTimeout(() => document.getElementById('setupInput').focus(), 100);
+}
+
+function closeOnboarding() { document.getElementById('onboardingModal').classList.remove('active'); }
+
+function addSetupBubble(text, role) {
+  const area = document.getElementById('setupChatArea');
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;' + (role === 'user' ? 'justify-content:flex-end;' : '');
+  const bub = document.createElement('div');
+  bub.style.cssText = 'max-width:82%;padding:.55rem .85rem;border-radius:12px;font-size:.83rem;line-height:1.5;white-space:pre-wrap;'
+    + (role === 'user'
+      ? 'background:var(--accent);color:white;'
+      : 'background:var(--card);color:var(--text);border:1px solid var(--border);');
+  bub.textContent = text;
+  wrap.appendChild(bub);
+  area.appendChild(wrap);
+  area.scrollTop = area.scrollHeight;
+}
+
+async function sendSetupMessage() {
+  const inp  = document.getElementById('setupInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = ''; inp.disabled = true;
+  addSetupBubble(text, 'user');
+  setupMessages.push({role:'user', content:text});
+  try {
+    const res  = await fetch(API + '/api/setup-chat', {
+      method:'POST',
+      headers:{Authorization:'Bearer '+userToken, 'Content-Type':'application/json'},
+      body:JSON.stringify({messages:setupMessages})
+    });
+    const data = await res.json();
+    const reply = data.reply || 'Got it!';
+    addSetupBubble(reply, 'bot');
+    setupMessages.push({role:'assistant', content:reply});
+    if (data.config && data.config.done) {
+      addSetupBubble('Setting everything up now...', 'bot');
+      await finalizeSetupFromConfig(data.config);
+    }
+  } catch(e) { addSetupBubble('Connection error. Please try again.', 'bot'); }
+  inp.disabled = false; inp.focus();
+}
+
+async function finalizeSetupFromConfig(cfg) {
+  const tones = {
+    professional:'You are professional, thorough, and detail-oriented.',
+    friendly:'You are warm, approachable, and conversational.',
+    expert:'You are knowledgeable and direct. Get to the point quickly.',
+    casual:'You are relaxed and personable. Speak naturally.'
+  };
+  const greetings = {
+    professional:`Welcome to ${cfg.name}. How can I assist you today?`,
+    friendly:`Hey! 👋 Welcome to ${cfg.name}. What can I help with?`,
+    expert:`Welcome. I'm here to answer questions about ${cfg.name}.`,
+    casual:`Hey! 🤙 Welcome to ${cfg.name}. What's on your mind?`
+  };
+  const tone = cfg.tone || 'friendly';
+  const prompt = `You are an AI assistant for ${cfg.name}.
+
+About us: ${cfg.purpose}
+
+${tones[tone] || tones.friendly}
+
+Your role: Answer questions about our business, qualify visitors, guide them toward taking action (call, book, or buy). Collect contact info when appropriate. For complex questions, offer to connect them with our team.`;
+
+  try {
+    await fetch(API + '/api/bot', {
+      method:'PUT',
+      headers:{Authorization:'Bearer '+userToken,'Content-Type':'application/json'},
+      body:JSON.stringify({name:cfg.name, greeting:greetings[tone]||greetings.friendly, system_prompt:prompt, color:'#7c6af7', lead_capture:1})
+    });
+    addSetupBubble(`✅ Done! Your "${cfg.name}" bot is live. Check the Bot tab for your embed code!`, 'bot');
+    setTimeout(() => { closeOnboarding(); location.reload(); }, 2500);
+  } catch(e) { addSetupBubble('Error saving bot. Try saving manually from the Bot tab.', 'bot'); }
+}
+
+// ─── DATA SOURCES ───
+function showSourceForm() { document.getElementById('sourceFormContainer').style.display = 'block'; }
+function hideSourceForm()  { document.getElementById('sourceFormContainer').style.display = 'none'; }
+
+function toggleSourceFields() {
+  const t = document.getElementById('sourceType').value;
+  document.getElementById('urlField').style.display    = (t === 'website' || t === 'mls') ? 'block' : 'none';
+  document.getElementById('apiKeyField').style.display = t === 'mls' ? 'block' : 'none';
+}
+
+async function createDataSource() {
+  const type = document.getElementById('sourceType').value;
+  const name = document.getElementById('sourceName').value.trim();
+  if (!type || !name) { showToast('Type and name required'); return; }
+  const data = {source_type:type, name, url:document.getElementById('sourceUrl').value.trim()||null, api_key:document.getElementById('sourceApiKey').value.trim()||null};
+  try {
+    const r = await fetch(API + '/api/data-sources', {method:'POST', headers:{Authorization:'Bearer '+userToken,'Content-Type':'application/json'}, body:JSON.stringify(data)});
+    const result = await r.json();
+    if (result.error) { showToast('Error: '+result.error); return; }
+    hideSourceForm();
+    document.getElementById('sourceType').value = document.getElementById('sourceName').value = document.getElementById('sourceUrl').value = '';
+    showToast('Source added!');
+    loadDataSources();
+    if (data.url) {
+      showToast('Syncing...');
+      const sr = await fetch(API+`/api/data-sources/${result.id}/sync`, {method:'POST', headers:{Authorization:'Bearer '+userToken}});
+      const sd = await sr.json();
+      showToast(sd.chunks > 0 ? `✓ Synced ${sd.chunks} knowledge chunks` : (sd.error ? 'Sync error: '+sd.error : 'Synced'));
+      loadDataSources(); loadKnowledge();
+    }
+  } catch(e) { showToast('Error adding source'); }
+}
+
+async function loadDataSources() {
+  try {
+    const r = await fetch(API + '/api/data-sources', {headers:{Authorization:'Bearer '+userToken}});
+    const sources = await r.json();
+    const c = document.getElementById('sourcesContainer');
+    if (!sources.length) { c.innerHTML = '<div class="empty-state" style="padding:.5rem 0;"><div class="empty-icon">📡</div>No sources. Add a website URL to get started.</div>'; return; }
+    c.innerHTML = sources.map(s => {
+      const sc = s.sync_status === 'synced' ? 'var(--green)' : (s.sync_status === 'error' ? 'var(--red)' : s.sync_status === 'syncing' ? 'var(--yellow)' : 'var(--muted)');
+      return `<div class="data-source-item">
+        <div>
+          <div style="color:white;font-weight:500;font-size:.85rem;">${esc(s.name)}</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;">${s.source_type}${s.url?' · '+esc(s.url.slice(0,50)):''} · <span style="color:${sc};">${s.sync_status}</span>${s.item_count?` · ${s.item_count} chunks`:''}</div>
+          ${s.last_error?`<div style="font-size:.7rem;color:var(--red);margin-top:.15rem;">${esc(s.last_error.slice(0,100))}</div>`:''}
+        </div>
+        <div style="display:flex;gap:.4rem;flex-shrink:0;">
+          <button class="btn btn-ghost btn-sm" onclick="syncSource(${s.id})">Sync</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteSource(${s.id})">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { document.getElementById('sourcesContainer').innerHTML = '<div class="empty-state">Error loading sources</div>'; }
+}
+
+async function syncSource(id) {
+  showToast('Syncing...');
+  const r = await fetch(API+`/api/data-sources/${id}/sync`, {method:'POST', headers:{Authorization:'Bearer '+userToken}});
+  const d = await r.json();
+  showToast(d.chunks>0?`✓ ${d.chunks} chunks synced`:(d.error?'Error: '+d.error:'Synced'));
+  loadDataSources(); loadKnowledge();
+}
+
+async function deleteSource(id) {
+  if (!confirm('Delete this data source and its knowledge?')) return;
+  await fetch(API+`/api/data-sources/${id}`, {method:'DELETE', headers:{Authorization:'Bearer '+userToken}});
+  showToast('Deleted'); loadDataSources(); loadKnowledge();
+}
+
+// ─── KNOWLEDGE ───
+function toggleAddKnowledge() {
+  const f = document.getElementById('addKnowledgeForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (f.style.display === 'block') document.getElementById('manualKbContent').focus();
+}
+
+async function loadKnowledge() {
+  try {
+    const r  = await fetch(API + '/api/knowledge', {headers:{Authorization:'Bearer '+userToken}});
+    const kb = await r.json();
+    const c  = document.getElementById('knowledgeContainer');
+    if (!kb.length) { c.innerHTML = '<div style="font-size:.8rem;color:var(--muted);padding:.25rem 0;">Knowledge base is empty. Sync a source or add entries manually.</div>'; return; }
+    c.innerHTML = `<div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;">${kb.length} entr${kb.length===1?'y':'ies'}</div>`
+      + kb.slice(0,40).map(k =>
+        `<div class="kb-item">
+          <div style="flex:1;">
+            <div class="kb-content">${esc(k.content)}</div>
+            <div class="kb-source">${esc(k.source||'manual')}</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="deleteKb(${k.id})" title="Delete">✕</button>
+        </div>`
+      ).join('');
+  } catch(e) {}
+}
+
+async function addManualKnowledge() {
+  const content = document.getElementById('manualKbContent').value.trim();
+  if (!content) return;
+  await fetch(API+'/api/knowledge', {method:'POST', headers:{Authorization:'Bearer '+userToken,'Content-Type':'application/json'}, body:JSON.stringify({content, source:'manual'})});
+  document.getElementById('manualKbContent').value = '';
+  toggleAddKnowledge();
+  showToast('Added to knowledge base');
+  loadKnowledge();
+}
+
+async function deleteKb(id) {
+  await fetch(API+`/api/knowledge/${id}`, {method:'DELETE', headers:{Authorization:'Bearer '+userToken}});
+  loadKnowledge();
+}
+
+// ─── LEADS ───
 async function loadLeads() {
   try {
-    const res = await fetch(API + '/api/leads', {headers:{'Authorization':'Bearer '+userToken}});
-    const leads = await res.json();
-    document.getElementById('statLeads').textContent = leads.length;
-    const container = document.getElementById('leadsContainer');
-    if (!leads.length) { container.innerHTML = '<div class="empty-state">No leads yet — share your bot link to start capturing.</div>'; return; }
-    container.innerHTML = `<table class="leads-table">
-      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Date</th></tr></thead>
-      <tbody>${leads.map(l => `<tr>
-        <td>${l.name||'—'}</td><td>${l.email||'—'}</td>
-        <td>${l.phone||'—'}</td>
-        <td>${new Date(l.created_at).toLocaleDateString()}</td>
-      </tr>`).join('')}</tbody>
-    </table>`;
+    const r = await fetch(API + '/api/leads', {headers:{Authorization:'Bearer '+userToken}});
+    allLeads = await r.json();
+    document.getElementById('statLeads').textContent = allLeads.length;
+    renderLeads();
+    document.getElementById('exportLeadsBtn').style.display = allLeads.length ? 'inline-flex' : 'none';
   } catch(e) {}
 }
 
+function renderLeads() {
+  const c = document.getElementById('leadsContainer');
+  if (!allLeads.length) { c.innerHTML = '<div class="empty-state"><div class="empty-icon">📥</div>No leads yet.</div>'; return; }
+  c.innerHTML = `<div class="table-wrapper"><table class="table">
+    <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Date</th></tr></thead>
+    <tbody>${allLeads.map(l =>
+      `<tr onclick='openLead(${JSON.stringify(l).replace(/'/g,"&#39;")})'>
+        <td style="color:white;font-weight:500;">${esc(l.name||'—')}</td>
+        <td>${esc(l.email||'—')}</td><td>${esc(l.phone||'—')}</td>
+        <td><span class="status-badge status-${l.status||'new'}">${l.status||'new'}</span></td>
+        <td style="color:var(--muted);font-size:.78rem;">${new Date(l.created_at).toLocaleDateString()}</td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+function openLead(l) {
+  document.getElementById('leadModalId').value         = l.id;
+  document.getElementById('leadModalName').textContent  = l.name  || '—';
+  document.getElementById('leadModalEmail').textContent = l.email || '—';
+  document.getElementById('leadModalPhone').textContent = l.phone || '—';
+  document.getElementById('leadModalDate').textContent  = new Date(l.created_at).toLocaleDateString();
+  document.getElementById('leadModalStatus').value      = l.status || 'new';
+  document.getElementById('leadModalNotes').value       = l.notes  || '';
+  document.getElementById('leadModal').classList.add('active');
+}
+
+function closeLeadModal() { document.getElementById('leadModal').classList.remove('active'); }
+
+async function saveLeadDetail() {
+  const id     = document.getElementById('leadModalId').value;
+  const status = document.getElementById('leadModalStatus').value;
+  const notes  = document.getElementById('leadModalNotes').value;
+  await fetch(API+`/api/leads/${id}`, {method:'PATCH', headers:{Authorization:'Bearer '+userToken,'Content-Type':'application/json'}, body:JSON.stringify({status, notes})});
+  showToast('Saved');
+  closeLeadModal();
+  loadLeads();
+}
+
+function exportLeads() {
+  const rows = [['Name','Email','Phone','Status','Notes','Date']];
+  allLeads.forEach(l => rows.push([l.name||'',l.email||'',l.phone||'',l.status||'',l.notes||'',l.created_at]));
+  const csv = rows.map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a   = document.createElement('a');
+  a.href    = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download= 'leads.csv';
+  a.click();
+}
+
+// ─── CONVERSATIONS ───
 async function loadConvos() {
   try {
-    const res = await fetch(API + '/api/conversations', {headers:{'Authorization':'Bearer '+userToken}});
-    const convos = await res.json();
+    const r     = await fetch(API + '/api/conversations', {headers:{Authorization:'Bearer '+userToken}});
+    const convos = await r.json();
     document.getElementById('statConvos').textContent = convos.length;
-    const container = document.getElementById('convosContainer');
-    if (!convos.length) { container.innerHTML = '<div class="empty-state">No conversations yet.</div>'; return; }
-    container.innerHTML = '<div class="convo-list">' + convos.map(c => `
-      <div class="convo-item" onclick="viewConvo('${c.session_id}')">
-        <div><div class="convo-id">Session ${c.session_id}</div>
-          <div class="convo-meta">${c.messages} messages</div></div>
-        <div class="convo-meta">${new Date(c.started).toLocaleDateString()}</div>
-      </div>`).join('') + '</div>';
+    const c = document.getElementById('convosContainer');
+    if (!convos.length) { c.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div>No conversations yet.</div>'; return; }
+    c.innerHTML = convos.map(cv =>
+      `<div class="session-row" data-sid="${esc(cv.session_id)}" onclick="toggleSession(this.dataset.sid,this)">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:600;color:white;font-size:.85rem;">${cv.messages} messages</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.1rem;font-family:monospace;">${esc(cv.session_id)}</div>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);">${new Date(cv.started).toLocaleDateString()}</div>
+        </div>
+        <div class="session-transcript" id="t-${esc(cv.session_id)}">
+          <div style="color:var(--muted);font-size:.78rem;">Click to expand...</div>
+        </div>
+      </div>`
+    ).join('');
   } catch(e) {}
 }
 
-async function viewConvo(sessionId) {
-  const res = await fetch(API + '/api/conversations/' + sessionId, {headers:{'Authorization':'Bearer '+userToken}});
-  const msgs = await res.json();
-  const container = document.getElementById('convosContainer');
-  container.innerHTML = `
-    <button class="btn btn-ghost" style="margin-bottom:1rem;font-size:.75rem;" onclick="loadConvos()">← Back</button>
-    <div style="display:flex;flex-direction:column;gap:.5rem;max-height:300px;overflow-y:auto;">
-      ${msgs.map(m => `<div style="display:flex;gap:.5rem;align-items:flex-start;${m.role==='user'?'flex-direction:row-reverse':''}">
-        <div style="font-size:.7rem;padding:.1rem .4rem;border-radius:4px;background:${m.role==='user'?'rgba(124,106,247,0.2)':'rgba(255,255,255,0.06)'};color:var(--muted);flex-shrink:0;">${m.role}</div>
-        <div style="font-size:.82rem;color:var(--text);line-height:1.5;">${m.message}</div>
-      </div>`).join('')}
-    </div>`;
-}
-
-// ── PAYPAL UPGRADE ──
-function showUpgrade() {
-  document.getElementById('upgradeModal').classList.add('active');
-  if (window.paypal && !document.getElementById('paypal-button-container').hasChildNodes()) {
-    paypal.Buttons({
-      createSubscription: function(data, actions) {
-        return actions.subscription.create({
-          plan_id: 'P-61W12046L3470310FNG7VENQ'
-        });
-      },
-      onApprove: async function(data) {
-        const res = await fetch(API + '/api/paypal/activate', {
-          method:'POST', headers:{'Authorization':'Bearer '+userToken,'Content-Type':'application/json'},
-          body: JSON.stringify({subscription_id: data.subscriptionID})
-        });
-        const result = await res.json();
-        if (result.success) {
-          localStorage.setItem('pb_plan', 'pro');
-          userPlan = 'pro';
-          updatePlanUI('pro');
-          document.getElementById('upgradeModal').classList.remove('active');
-          showToast('Welcome to Pro! 🎉');
-        }
-      }
-    }).render('#paypal-button-container');
+let _loadedSessions = new Set();
+async function toggleSession(sid, rowEl) {
+  const t = document.getElementById('t-' + sid);
+  if (!t) return;
+  const open = t.classList.toggle('open');
+  if (open && !_loadedSessions.has(sid)) {
+    _loadedSessions.add(sid);
+    t.innerHTML = '<div style="color:var(--muted);font-size:.78rem;"><span class="spinner"></span> Loading...</div>';
+    try {
+      const r    = await fetch(API+`/api/conversations/${encodeURIComponent(sid)}`, {headers:{Authorization:'Bearer '+userToken}});
+      const msgs = await r.json();
+      t.innerHTML = msgs.map(m =>
+        `<div class="msg-bubble msg-${m.role==='user'?'user':'bot'}">${esc(m.message)}</div>`
+      ).join('');
+    } catch(e) { t.innerHTML = '<div style="color:var(--red);font-size:.8rem;">Error loading transcript.</div>'; }
   }
 }
 
-// ── MULTI-BOT (PRO) ──
-async function loadBots() {
-  const res = await fetch(API + '/api/bots', {headers:{'Authorization':'Bearer '+userToken}});
-  const data = await res.json();
-  const container = document.getElementById('botsContainer');
-  container.innerHTML = '<div style="display:flex;flex-direction:column;gap:.75rem;">' +
-    data.bots.map(b => `
-      <div style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:1rem;display:flex;justify-content:space-between;align-items:center;">
+// ─── DEALS ───
+async function loadDeals() {
+  try {
+    const r = await fetch(API + '/api/deals', {headers:{Authorization:'Bearer '+userToken}});
+    allDeals = await r.json();
+    renderDeals();
+  } catch(e) {}
+}
+
+function filterDeals(status, el) {
+  dealFilter = status;
+  document.querySelectorAll('.pipeline-stage').forEach(s => s.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderDeals();
+}
+
+function renderDeals() {
+  const filtered = dealFilter === 'all' ? allDeals : allDeals.filter(d => d.deal_status === dealFilter);
+  const c = document.getElementById('dealsContainer');
+  if (!filtered.length) { c.innerHTML = `<div class="empty-state" style="padding:1rem 0;"><div class="empty-icon">🔑</div>No deals${dealFilter!=='all'?' in "'+dealFilter+'"':''}.</div>`; return; }
+  c.innerHTML = `<div class="table-wrapper"><table class="table">
+    <thead><tr><th>Deal</th><th>Address</th><th>Price</th><th>Commission</th><th>Status</th><th>Closing</th><th></th></tr></thead>
+    <tbody>${filtered.map(d =>
+      `<tr class="no-click">
+        <td style="color:white;font-weight:500;">${esc(d.deal_name||'—')}</td>
+        <td style="font-size:.78rem;">${esc(d.property_address||'—')}</td>
+        <td>${d.purchase_price?'$'+Number(d.purchase_price).toLocaleString():'—'}</td>
+        <td>${d.commission_amount?'$'+Number(d.commission_amount).toLocaleString():'—'}</td>
+        <td><span class="status-badge status-${d.deal_status||'lead'}">${d.deal_status||'lead'}</span></td>
+        <td style="font-size:.78rem;color:var(--muted);">${d.closing_date||'—'}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick='openDealModal(${JSON.stringify(d).replace(/'/g,"&#39;")})'>Edit</button></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+function openDealModal(deal) {
+  const isEdit = deal && deal.id;
+  document.getElementById('dealModalTitle').textContent = isEdit ? 'Edit Deal' : 'New Deal';
+  document.getElementById('dealId').value            = isEdit ? deal.id : '';
+  document.getElementById('dealName').value          = isEdit ? (deal.deal_name||'') : '';
+  document.getElementById('dealAddress').value       = isEdit ? (deal.property_address||'') : '';
+  document.getElementById('dealBuyerName').value     = isEdit ? (deal.buyer_name||'') : '';
+  document.getElementById('dealBuyerEmail').value    = isEdit ? (deal.buyer_email||'') : '';
+  document.getElementById('dealSellerName').value    = isEdit ? (deal.seller_name||'') : '';
+  document.getElementById('dealSellerEmail').value   = isEdit ? (deal.seller_email||'') : '';
+  document.getElementById('dealPrice').value         = isEdit ? (deal.purchase_price||'') : '';
+  document.getElementById('dealCommission').value    = isEdit ? (deal.commission_amount||'') : '';
+  document.getElementById('dealEarnest').value       = isEdit ? (deal.earnest_money||'') : '';
+  document.getElementById('dealClosing').value       = isEdit ? (deal.closing_date||'') : '';
+  document.getElementById('dealStatus').value        = isEdit ? (deal.deal_status||'lead') : 'lead';
+  document.getElementById('dealNotes').value         = isEdit ? (deal.notes||'') : '';
+  document.getElementById('dealDeleteBtn').style.display = isEdit ? 'inline-flex' : 'none';
+  document.getElementById('dealModal').classList.add('active');
+}
+
+function closeDealModal() { document.getElementById('dealModal').classList.remove('active'); }
+
+async function saveDeal() {
+  const id   = document.getElementById('dealId').value;
+  const data = {
+    deal_name:         document.getElementById('dealName').value,
+    property_address:  document.getElementById('dealAddress').value,
+    buyer_name:        document.getElementById('dealBuyerName').value,
+    buyer_email:       document.getElementById('dealBuyerEmail').value,
+    seller_name:       document.getElementById('dealSellerName').value,
+    seller_email:      document.getElementById('dealSellerEmail').value,
+    purchase_price:    parseFloat(document.getElementById('dealPrice').value)||null,
+    commission_amount: parseFloat(document.getElementById('dealCommission').value)||null,
+    earnest_money:     parseFloat(document.getElementById('dealEarnest').value)||null,
+    closing_date:      document.getElementById('dealClosing').value||null,
+    deal_status:       document.getElementById('dealStatus').value,
+    notes:             document.getElementById('dealNotes').value
+  };
+  try {
+    const r = await fetch(API + (id?`/api/deals/${id}`:'/api/deals'), {
+      method: id ? 'PUT' : 'POST',
+      headers:{Authorization:'Bearer '+userToken,'Content-Type':'application/json'}, body:JSON.stringify(data)
+    });
+    if (r.ok) { closeDealModal(); showToast(id?'Deal updated':'Deal created'); loadDeals(); }
+    else { const e=await r.json(); showToast('Error: '+(e.error||'Unknown')); }
+  } catch(e) { showToast('Error'); }
+}
+
+async function deleteDeal() {
+  if (!confirm('Delete this deal permanently?')) return;
+  const id = document.getElementById('dealId').value;
+  await fetch(API+`/api/deals/${id}`, {method:'DELETE', headers:{Authorization:'Bearer '+userToken}});
+  closeDealModal(); showToast('Deal deleted'); loadDeals();
+}
+
+// ─── TEAM ───
+async function loadTeam() {
+  try {
+    const r    = await fetch(API + '/api/team', {headers:{Authorization:'Bearer '+userToken}});
+    const data = await r.json();
+    const c    = document.getElementById('teamContainer');
+    const members = data.members || data || [];
+    if (!members.length) { c.innerHTML = '<div style="font-size:.82rem;color:var(--muted);">No team members yet.</div>'; return; }
+    c.innerHTML = members.map(m =>
+      `<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);">
         <div>
-          <div style="font-weight:600;color:white;">${b.name}</div>
-          <div style="font-size:.72rem;color:var(--muted);font-family:monospace;margin-top:.2rem;">Token: ${b.token}</div>
+          <div style="font-size:.82rem;color:white;font-weight:500;">${esc(m.name||m.email)}</div>
+          <div style="font-size:.7rem;color:var(--muted);">${esc(m.email)} · ${m.role}</div>
         </div>
-        <div style="display:flex;gap:.5rem;">
-          <button class="btn btn-ghost" style="font-size:.72rem;" onclick="switchBot(${b.id}, '${b.token}')">Edit</button>
-          ${data.bots.length > 1 ? `<button class="btn btn-ghost" style="font-size:.72rem;color:#f87171;" onclick="deleteBot(${b.id})">Delete</button>` : ''}
+        ${m.role!=='owner'?`<button class="btn btn-danger btn-sm" onclick="removeTeamMember(${m.id})">Remove</button>`:''}
+      </div>`
+    ).join('');
+  } catch(e) {}
+}
+
+function showInviteModal() {
+  document.getElementById('inviteTeamEmail').value = '';
+  document.getElementById('inviteTeamError').style.display = 'none';
+  document.getElementById('inviteModal').classList.add('active');
+}
+
+async function sendInvite() {
+  const email = document.getElementById('inviteTeamEmail').value.trim();
+  const role  = document.getElementById('inviteTeamRole').value;
+  const errEl = document.getElementById('inviteTeamError');
+  if (!email) { errEl.textContent = 'Email required'; errEl.style.display = 'block'; return; }
+  const r    = await fetch(API+'/api/team/invite', {method:'POST', headers:{Authorization:'Bearer '+userToken,'Content-Type':'application/json'}, body:JSON.stringify({email, role})});
+  const data = await r.json();
+  if (data.error) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+  document.getElementById('inviteModal').classList.remove('active');
+  showToast('Invite sent to ' + email);
+  loadTeam();
+}
+
+async function removeTeamMember(id) {
+  if (!confirm('Remove this team member?')) return;
+  await fetch(API+`/api/team/${id}`, {method:'DELETE', headers:{Authorization:'Bearer '+userToken}});
+  showToast('Member removed'); loadTeam();
+}
+
+// ─── DOCUMENTS ───
+async function loadDocs() {
+  try {
+    const r    = await fetch(API + '/api/documents', {headers:{Authorization:'Bearer '+userToken}});
+    const docs = await r.json();
+    const c    = document.getElementById('docsContainer');
+    if (!docs.length) { c.innerHTML = '<div class="empty-state" style="padding:.5rem;">No documents.</div>'; return; }
+    c.innerHTML = docs.map(d =>
+      `<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-size:.82rem;color:white;">${esc(d.title||d.doc_type)}</div>
+          <div style="font-size:.7rem;color:var(--muted);">${d.doc_type} · ${new Date(d.created_at).toLocaleDateString()}</div>
         </div>
-      </div>`).join('') + '</div>' +
-    (data.bots.length < 3 ? '<button class="btn btn-ghost" style="margin-top:.75rem;width:100%;" onclick="createBot()">+ Add Bot (' + data.bots.length + '/3)</button>' : '');
+        <div style="display:flex;gap:.3rem;">
+          <a href="${API}/api/documents/${d.id}/download" class="btn btn-ghost btn-sm" style="text-decoration:none;" download>↓</a>
+          <button class="btn btn-danger btn-sm" onclick="deleteDoc(${d.id})">✕</button>
+        </div>
+      </div>`
+    ).join('');
+  } catch(e) {}
 }
 
-async function createBot() {
-  const name = prompt('Bot name:');
-  if (!name) return;
-  const res = await fetch(API + '/api/bots', {
-    method:'POST', headers:{'Authorization':'Bearer '+userToken,'Content-Type':'application/json'},
-    body: JSON.stringify({name})
-  });
-  const data = await res.json();
-  if (data.error) { showToast(data.error); return; }
-  showToast('Bot created! ✓');
-  loadBots();
+function showGenerateDocModal() {
+  document.getElementById('genDocTitle').value = document.getElementById('genDocDetails').value = '';
+  document.getElementById('genDocStatus').textContent = '';
+  document.getElementById('generateDocModal').classList.add('active');
 }
 
-async function deleteBot(id) {
-  if (!confirm('Delete this bot?')) return;
-  await fetch(API + '/api/bots/' + id, {method:'DELETE', headers:{'Authorization':'Bearer '+userToken}});
-  showToast('Bot deleted');
-  loadBots();
+async function generateDoc() {
+  const type    = document.getElementById('genDocType').value;
+  const title   = document.getElementById('genDocTitle').value.trim();
+  const details = document.getElementById('genDocDetails').value.trim();
+  const statusEl= document.getElementById('genDocStatus');
+  if (!title) { statusEl.textContent = 'Title required.'; return; }
+  statusEl.textContent = 'Generating...';
+  try {
+    const endpoint = type === 'invoice' ? '/api/generate-invoice' : '/api/generate-contract';
+    const r = await fetch(API+endpoint, {method:'POST', headers:{Authorization:'Bearer '+userToken,'Content-Type':'application/json'}, body:JSON.stringify({title, data:{description:details}})});
+    const data = await r.json();
+    if (data.success) {
+      statusEl.textContent = '✓ Generated!';
+      setTimeout(() => { document.getElementById('generateDocModal').classList.remove('active'); loadDocs(); }, 1200);
+    } else { statusEl.textContent = 'Error: '+(data.error||'Unknown'); }
+  } catch(e) { statusEl.textContent = 'Error generating.'; }
 }
 
-function switchBot(id, token) {
-  botToken = token;
-  updateEmbedCode();
-  showToast('Switched to bot — edit and save below');
+async function deleteDoc(id) {
+  if (!confirm('Delete this document?')) return;
+  await fetch(API+`/api/documents/${id}`, {method:'DELETE', headers:{Authorization:'Bearer '+userToken}});
+  loadDocs();
 }
 
-// ── TOAST ──
+// ─── UPGRADE ───
+function showUpgradeModal() {
+  document.getElementById('upgradeStatus').textContent = '';
+  document.getElementById('upgradeModal').classList.add('active');
+}
+
+function selectUpgradePlan(plan, el) {
+  selectedUpgradePlan = plan;
+  document.querySelectorAll('.upgrade-plan').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function doUpgrade() {
+  const statusEl = document.getElementById('upgradeStatus');
+  statusEl.textContent = 'Processing...';
+  try {
+    const r    = await fetch(API+'/api/upgrade', {method:'POST', headers:{Authorization:'Bearer '+userToken,'Content-Type':'application/json'}, body:JSON.stringify({plan:selectedUpgradePlan})});
+    const data = await r.json();
+    if (data.url) { window.location.href = data.url; }
+    else { statusEl.textContent = data.message || "Request sent! We'll email you within 24h."; }
+  } catch(e) { statusEl.textContent = 'Error. Please email us directly.'; }
+}
+
+// ─── ACCEPT INVITE ───
+async function submitAcceptInvite() {
+  const name  = document.getElementById('inviteName').value.trim();
+  const email = document.getElementById('inviteEmail').value.trim();
+  const pw    = document.getElementById('invitePassword').value;
+  const errEl = document.getElementById('inviteError');
+  errEl.style.display = 'none';
+  if (!name || !email || !pw) { errEl.textContent = 'All fields required.'; errEl.style.display = 'block'; return; }
+  try {
+    const r    = await fetch(API+'/api/team/accept-invite', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:inviteToken, email, password:pw, name})});
+    const data = await r.json();
+    if (data.error) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+    localStorage.setItem('pb_token', data.token);
+    userToken = data.token; currentUser = data;
+    document.getElementById('inviteForm').style.display = 'none';
+    document.getElementById('inviteSuccess').style.display = 'block';
+    setTimeout(async () => { await showDashboard(); }, 1500);
+  } catch(e) { errEl.textContent = 'Connection error.'; errEl.style.display = 'block'; }
+}
+
+// ─── QUICKBOOKS ───
+async function loadQBStatus() {
+  try {
+    const r = await fetch(API + '/api/quickbooks/status', {headers:{Authorization:'Bearer '+userToken}});
+    const d = await r.json();
+    const statusEl      = document.getElementById('qbStatus');
+    const connectBtn    = document.getElementById('qbConnectBtn');
+    const syncBtn       = document.getElementById('qbSyncBtn');
+    const disconnectBtn = document.getElementById('qbDisconnectBtn');
+    if (d.connected) {
+      statusEl.textContent  = '✅ Connected (Realm: ' + d.realm_id + ')';
+      statusEl.style.color  = '#22c55e';
+      connectBtn.style.display    = 'none';
+      syncBtn.style.display       = 'inline-flex';
+      disconnectBtn.style.display = 'inline-flex';
+    } else {
+      statusEl.textContent = 'Not connected';
+      statusEl.style.color = 'var(--muted)';
+      connectBtn.style.display    = 'inline-flex';
+      syncBtn.style.display       = 'none';
+      disconnectBtn.style.display = 'none';
+    }
+  } catch(e) {}
+}
+
+function connectQuickBooks() {
+  window.location.href = API + '/api/quickbooks/connect?token=' + encodeURIComponent(userToken);
+}
+
+async function syncQuickBooks() {
+  const btn    = document.getElementById('qbSyncBtn');
+  const result = document.getElementById('qbSyncResult');
+  btn.textContent = 'Syncing…';
+  btn.disabled = true;
+  result.style.display = 'none';
+  try {
+    const r = await fetch(API + '/api/quickbooks/sync', {method:'POST', headers:{Authorization:'Bearer '+userToken}});
+    const d = await r.json();
+    result.textContent = r.ok
+      ? '✅ Synced ' + d.synced + ' new lead' + (d.synced === 1 ? '' : 's') + ' from ' + d.total + ' QB customers.'
+      : '❌ ' + (d.error || 'Sync failed');
+  } catch(e) {
+    result.textContent = '❌ Network error';
+  }
+  result.style.display = 'block';
+  btn.textContent = '🔄 Sync Now';
+  btn.disabled = false;
+}
+
+async function disconnectQuickBooks() {
+  if (!confirm('Disconnect QuickBooks? Your already-synced leads will remain.')) return;
+  await fetch(API + '/api/quickbooks/disconnect', {method:'POST', headers:{Authorization:'Bearer '+userToken}});
+  loadQBStatus();
+}
+
+// ─── UTILS ───
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
 }
 </script>
 </body>
