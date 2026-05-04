@@ -1211,7 +1211,7 @@ def feature_request():
 # ─── PUBLIC CHAT ───
 @app.route('/api/chat/<bot_token>', methods=['POST'])
 def chat(bot_token):
-    if not rate_ok(bot_token):
+    if not rate_ok(bot_token, limit=100):
         return jsonify({'error': 'Rate limit exceeded. Try again in a minute.'}), 429
 
     db = get_db()
