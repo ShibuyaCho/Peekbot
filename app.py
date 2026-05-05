@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory, Response, make_r
 from flask_cors import CORS
 import sqlite3, hashlib, hmac as _hmac, jwt, json, datetime, smtplib
 import urllib.request, urllib.parse, os, secrets, base64, time, csv, io, re, bcrypt
+import threading
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
@@ -39,6 +40,8 @@ os.makedirs(DOCS_DIR, exist_ok=True)
 ALLOWED_EXT = {'pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg'}
 
 FREE_MSG_LIMIT = 10  # per month
+
+AUTO_SYNC_INTERVAL = 7200  # 2 hours in seconds
 
 # ─── RATE LIMITING ───
 _rate = defaultdict(list)
@@ -300,8 +303,9 @@ def monthly_msg_count(bot_id, db):
     ).fetchone()
     return row[0]
 
-# ─── WEB SCRAPER ───
+# ─── WEB SCRAPER (Playwright — handles JS-rendered sites) ───
 class _Extractor(HTMLParser):
+    """Fallback plain HTML extractor used if Playwright is unavailable."""
     SKIP = {'script','style','noscript','nav','footer','head','iframe','svg'}
     def __init__(self):
         super().__init__()
@@ -316,7 +320,44 @@ class _Extractor(HTMLParser):
             s = ' '.join(data.split())
             if len(s) > 20: self.parts.append(s)
 
+
+def _chunk_text(text, max_total=15000, chunk_size=800):
+    chunks = []
+    for i in range(0, min(len(text), max_total), chunk_size):
+        chunk = text[i:i+chunk_size].strip()
+        if chunk:
+            chunks.append(chunk)
+    return chunks
+
+
 def scrape_url(url):
+    """
+    Scrape a URL using Playwright (headless Chromium) so JS-rendered content
+    is captured. Falls back to urllib + HTMLParser if Playwright is not installed.
+    """
+    # ── Playwright path ──────────────────────────────────────────────────
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page(
+                user_agent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
+                           '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            )
+            page.goto(url, wait_until='networkidle', timeout=20000)
+            # Give any lazy-loaded content a moment
+            page.wait_for_timeout(1500)
+            text = page.inner_text('body')
+            browser.close()
+        # Collapse excessive whitespace
+        text = re.sub(r'\n{3,}', '\n\n', text).strip()
+        return _chunk_text(text), None
+    except ImportError:
+        pass  # Playwright not installed — fall through to urllib
+    except Exception as e:
+        return [], f'Playwright error: {e}'
+
+    # ── urllib fallback ──────────────────────────────────────────────────
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 Peekbot/1.0'})
         with urllib.request.urlopen(req, timeout=15) as r:
@@ -324,14 +365,97 @@ def scrape_url(url):
         p = _Extractor()
         p.feed(raw)
         full = '\n'.join(p.parts)
-        chunks = []
-        for i in range(0, min(len(full), 15_000), 800):
-            chunk = full[i:i+800].strip()
-            if chunk:
-                chunks.append(chunk)
-        return chunks, None
+        return _chunk_text(full), None
     except Exception as e:
         return [], str(e)
+
+
+# ─── SYNC HELPERS (shared between manual sync route and auto-sync) ───
+
+def _do_sync(src, org_id, db):
+    """
+    Perform the actual scrape + knowledge_base write for one data_source row.
+    `src` must be a sqlite3.Row. `db` must be an open connection.
+    Returns (chunk_count, error_string_or_None).
+    """
+    sid = src['id']
+    db.execute("UPDATE data_sources SET sync_status='syncing' WHERE id=?", (sid,))
+    db.commit()
+
+    chunks, err = [], None
+    if src['source_type'] in ('website', 'mls') and src['url']:
+        chunks, err = scrape_url(src['url'])
+    elif src['source_type'] == 'instagram':
+        err = 'Instagram scraping requires authentication; use website URL instead.'
+    else:
+        err = 'No URL configured'
+
+    if chunks:
+        db.execute('DELETE FROM knowledge_base WHERE source_id=? AND org_id=?', (sid, org_id))
+        for chunk in chunks:
+            db.execute(
+                'INSERT INTO knowledge_base (org_id, content, source, source_id) VALUES (?,?,?,?)',
+                (org_id, chunk, src['name'], sid)
+            )
+        db.execute(
+            '''UPDATE data_sources SET sync_status='synced', last_synced=CURRENT_TIMESTAMP,
+               item_count=?, last_error=NULL WHERE id=?''',
+            (len(chunks), sid)
+        )
+    elif err:
+        db.execute(
+            "UPDATE data_sources SET sync_status='error', last_error=? WHERE id=?",
+            (err[:500], sid)
+        )
+    else:
+        # Scraped OK but got nothing — mark synced with 0 items
+        db.execute(
+            "UPDATE data_sources SET sync_status='synced', last_synced=CURRENT_TIMESTAMP, item_count=0 WHERE id=?",
+            (sid,)
+        )
+
+    db.commit()
+    return len(chunks), err
+
+
+# ─── AUTO-SYNC BACKGROUND THREAD ────────────────────────────────────────────
+
+def _auto_sync_loop():
+    """
+    Runs forever in a daemon thread.
+    Every AUTO_SYNC_INTERVAL seconds it re-syncs every website/mls data source.
+    """
+    print(f'[auto-sync] Started — interval {AUTO_SYNC_INTERVAL}s')
+    while True:
+        time.sleep(AUTO_SYNC_INTERVAL)
+        print('[auto-sync] Running scheduled sync for all sources…')
+        try:
+            db = get_db()
+            sources = db.execute(
+                "SELECT ds.*, b.org_id FROM data_sources ds "
+                "JOIN bots b ON ds.bot_id = b.id "
+                "WHERE ds.source_type IN ('website','mls') AND ds.url IS NOT NULL"
+            ).fetchall()
+            db.close()
+
+            for src in sources:
+                try:
+                    db = get_db()
+                    count, err = _do_sync(src, src['org_id'], db)
+                    db.close()
+                    if err:
+                        print(f'[auto-sync] source {src["id"]} ({src["name"]}): error — {err}')
+                    else:
+                        print(f'[auto-sync] source {src["id"]} ({src["name"]}): {count} chunks')
+                except Exception as e:
+                    print(f'[auto-sync] source {src["id"]} exception: {e}')
+        except Exception as e:
+            print(f'[auto-sync] outer exception: {e}')
+
+
+_sync_thread = threading.Thread(target=_auto_sync_loop, daemon=True, name='auto-sync')
+_sync_thread.start()
+
 
 # ─── STRIPE HELPERS ───
 def stripe_post(path, params):
@@ -561,7 +685,6 @@ def delete_data_source(sid):
     if not src:
         db.close()
         return jsonify({'error': 'Not found'}), 404
-    # Delete knowledge base entries from this source
     db.execute('DELETE FROM knowledge_base WHERE source_id=? AND org_id=?', (sid, user['org_id']))
     db.execute('DELETE FROM data_sources WHERE id=?', (sid,))
     db.commit()
@@ -582,36 +705,9 @@ def sync_data_source(sid):
         db.close()
         return jsonify({'error': 'Not found'}), 404
 
-    db.execute("UPDATE data_sources SET sync_status='syncing' WHERE id=?", (sid,))
-    db.commit()
-
-    chunks, err = [], None
-    if src['source_type'] == 'website' and src['url']:
-        chunks, err = scrape_url(src['url'])
-    elif src['source_type'] == 'instagram':
-        err = 'Instagram scraping requires authentication; use website URL instead.'
-    elif src['source_type'] == 'mls':
-        # Try fetching the API URL
-        if src['url']:
-            chunks, err = scrape_url(src['url'])
-        else:
-            err = 'No API URL configured'
-
-    if chunks:
-        db.execute('DELETE FROM knowledge_base WHERE source_id=? AND org_id=?', (sid, user['org_id']))
-        for chunk in chunks:
-            db.execute('INSERT INTO knowledge_base (org_id, content, source, source_id) VALUES (?,?,?,?)',
-                (user['org_id'], chunk, src['name'], sid))
-        db.execute('''UPDATE data_sources SET sync_status='synced', last_synced=CURRENT_TIMESTAMP,
-                      item_count=?, last_error=NULL WHERE id=?''', (len(chunks), sid))
-    elif err:
-        db.execute("UPDATE data_sources SET sync_status='error', last_error=? WHERE id=?", (err[:500], sid))
-    else:
-        db.execute("UPDATE data_sources SET sync_status='synced', last_synced=CURRENT_TIMESTAMP, item_count=0 WHERE id=?", (sid,))
-
-    db.commit()
+    count, err = _do_sync(src, user['org_id'], db)
     db.close()
-    return jsonify({'success': True, 'chunks': len(chunks), 'error': err})
+    return jsonify({'success': True, 'chunks': count, 'error': err})
 
 # ─── KNOWLEDGE BASE ───
 @app.route('/api/knowledge', methods=['GET'])
@@ -1131,7 +1227,6 @@ def upgrade():
         except Exception as e:
             print(f'[stripe] {e}')
 
-    # Fallback: send email request
     send_email(ADMIN_EMAIL, f'Upgrade Request: {plan}',
         f'<p>User <b>{user["email"]}</b> wants to upgrade to <b>{plan}</b>.</p>'
         f'<p>Manually update plan in DB: UPDATE users SET plan="{plan}" WHERE email="{user["email"]}"; </p>')
@@ -1165,7 +1260,7 @@ def stripe_webhook():
         print(f'[webhook] {e}')
     return jsonify({'received': True})
 
-# ─── SETUP CHAT (LLM-backed onboarding) ───
+# ─── SETUP CHAT ───
 @app.route('/api/setup-chat', methods=['POST'])
 def setup_chat():
     uid = verify_token(request)
@@ -1220,7 +1315,6 @@ def chat(bot_token):
         db.close()
         return jsonify({'error': 'Bot not found'}), 404
 
-    # Free tier message limit
     org = db.execute('SELECT * FROM organizations WHERE id=?', (bot['org_id'],)).fetchone()
     owner = db.execute('SELECT * FROM users WHERE id=?', (org['owner_id'],)).fetchone()
     if owner and owner['plan'] == 'free':
@@ -1310,7 +1404,6 @@ fetch(base + '/api/config/' + t).then(function(r){ return r.json(); }).then(func
 }).catch(function(){});
 
 function inject() {
-  // Use shadow DOM to isolate from host page CSS
   var host = document.createElement('div');
   host.id = 'peekbot-widget';
   host.style.cssText = 'position:fixed;bottom:1.5rem;z-index:2147483647;' + (pos === 'left' ? 'left:1.5rem' : 'right:1.5rem');
@@ -1390,16 +1483,15 @@ function inject() {
   shadow.getElementById('pb-send').addEventListener('click', function() { send(inp.value); });
   inp.addEventListener('keypress', function(e) { if (e.key === 'Enter') send(inp.value); });
 
-  // Lead capture state
   var leadCaptureStep = 0, leadCaptureData = {};
-  var LEAD_TRIGGER = 3; // after N bot messages, prompt for contact
+  var LEAD_TRIGGER = 3;
 
   function add(text, role) {
     var d = document.createElement('div');
     d.className = 'pb-msg ' + (role === 'u' ? 'u' : 'b');
     var bub = document.createElement('div');
     bub.className = 'pb-bubble';
-    bub.textContent = text; // textContent prevents XSS
+    bub.textContent = text;
     d.appendChild(bub);
     msgs.appendChild(d);
     msgs.scrollTop = msgs.scrollHeight;
@@ -1435,7 +1527,6 @@ function inject() {
     if (!text) return;
     inp.value = '';
 
-    // Lead capture flow
     if (leadCaptureStep === 1) {
       var lower = text.toLowerCase();
       if (lower.includes('yes') || lower.includes('sure') || lower.includes('ok') || lower.includes('yeah')) {
@@ -1461,7 +1552,6 @@ function inject() {
       leadCaptureData.email = text;
       leadCaptureStep = 4;
       add(text, 'u');
-      // Save lead
       fetch(base + '/api/lead/' + t, {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
@@ -1507,7 +1597,6 @@ function inject() {
 
 # ─── QUICKBOOKS ───
 def qb_get_token(org, db):
-    """Return a valid QB access token, refreshing if within 5 min of expiry."""
     expires_at = org['qb_token_expires_at']
     if expires_at:
         try:
