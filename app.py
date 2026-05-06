@@ -33,8 +33,8 @@ QB_CLIENT_SECRET = os.environ.get('QB_CLIENT_SECRET', '')
 QB_REDIRECT_URI  = os.environ.get('QB_REDIRECT_URI', f'{BASE_URL}/api/quickbooks/callback')
 
 DB         = '/home/jackson/peekbot.db'
-UPLOAD_DIR = os.path.expanduser('~/Peekbot/uploads')
-DOCS_DIR   = os.path.expanduser('~/Peekbot/documents')
+UPLOAD_DIR = os.path.expanduser('~/peekbot/uploads')
+DOCS_DIR   = os.path.expanduser('~/peekbot/documents')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(DOCS_DIR, exist_ok=True)
 ALLOWED_EXT = {'pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg'}
@@ -430,6 +430,21 @@ CONTRACT_LIBRARY = {
                 'description': 'Confidentiality agreement protecting proprietary information',
                 'clauses': ['Parties and the purpose of their relationship','Definition of Confidential Information (broad and specific)','Explicit exclusions from confidential information','Receiving party\'s obligations of care and non-disclosure','Permitted disclosures to employees, advisors, or legal counsel','Non-use obligation beyond the stated purpose','Term of the confidentiality obligation post-disclosure','Return or certified destruction of confidential materials','Right to seek injunctive relief for irreparable harm','No license grant implied by disclosure','Mutual vs. one-way designation','Governing law and venue'],
             },
+            'separation_agreement': {
+                'label': 'Separation & Release Agreement',
+                'description': 'Employee separation, severance, and claims release',
+                'clauses': ['Employer and employee full identification','Last day of employment and separation type (layoff, resignation, mutual)','Severance amount, payment schedule, and conditions','COBRA continuation notice and employer subsidy if any','Return of company property: devices, keys, documents, credentials','General release of all claims by employee including ADEA/OWBPA 21-day review and 7-day revocation right for employees over 40','Non-disparagement obligations of both parties','Ongoing confidentiality and trade secret obligations','Non-solicitation of employees and customers post-separation','Reference agreement: neutral reference or specific language','Governing law and venue'],
+            },
+            'non_compete_agreement': {
+                'label': 'Non-Compete Agreement',
+                'description': 'Post-employment non-competition restriction',
+                'clauses': ['Employer and employee/contractor identification','Consideration for the non-compete','Restricted activities: specific competing business types','Geographic scope: defined territory','Duration: restricted period post-employment (typically 12-24 months)','Non-solicitation of customers and employees','Injunctive relief right without bond requirement','Severability and blue-pencil reformation clause','Governing law'],
+            },
+            'equity_vesting_agreement': {
+                'label': 'Equity / Stock Vesting Agreement',
+                'description': 'Employee or founder equity grant and vesting schedule',
+                'clauses': ['Company and recipient full identification','Grant date and type of equity: stock options (ISO/NSO), restricted stock, or RSUs','Number of shares or units granted','Strike price or grant price','Vesting schedule: cliff and monthly/quarterly vesting periods','Acceleration: single-trigger or double-trigger on change of control','Termination treatment: voluntary resignation, termination for cause, termination without cause','Exercise window post-termination','Tax treatment: 83(b) election deadline for restricted stock','Governing law'],
+            },
         }
     },
     'construction': {
@@ -465,6 +480,26 @@ CONTRACT_LIBRARY = {
                 'description': 'LLC membership and governance structure',
                 'clauses': ['Member names, addresses, and ownership percentages','Business name, purpose, and formation state','Initial capital contributions and future contribution obligations','Profit and loss allocation percentages','Distribution priority, timing, and restrictions','Management structure: member-managed or manager-managed','Manager appointment, authority, and removal','Voting rights and required majority thresholds','Admission of new members and dilution process','Transfer restrictions and right of first refusal','Buy-sell provisions triggering events (death, disability, withdrawal, deadlock)','Buy-sell valuation methodology','Non-compete obligations of members','Books, records, and audit rights','Tax elections (S-corp, fiscal year) and allocations','Dissolution triggers and winding-up procedures'],
             },
+            'partnership_agreement': {
+                'label': 'Partnership Agreement',
+                'description': 'General or limited partnership formation and governance',
+                'clauses': ['Partner names, addresses, and partnership type (GP or LP)','Business name, purpose, and principal place of business','Capital contributions: initial and future obligations','Profit and loss allocation by partnership interest percentage','Distribution timing, priority, and restrictions','Management authority: general partner powers and limitations','Limited partner rights and voting restrictions','Bank accounts and signature authority','Admission of new partners and dilution','Transfer restrictions and right of first refusal','Buyout on death, disability, or withdrawal','Valuation methodology for buyout','Non-compete obligations of general partners','Dissolution events and winding-up','Governing law'],
+            },
+            'joint_venture_agreement': {
+                'label': 'Joint Venture Agreement',
+                'description': 'Two-party or multi-party joint business venture',
+                'clauses': ['All venture parties full legal identification','Venture purpose, scope, and defined project','Ownership percentage and capital contribution of each party','Governance: management committee structure, voting thresholds, and deadlock resolution','Revenue and profit sharing waterfall','Expense allocation and approval thresholds','IP contributed by each party and ownership of jointly developed IP','Confidentiality obligations during and after venture','Non-solicitation of each other employees and customers','Term and project completion milestones','Exit: buyout rights, wind-down procedure, and asset distribution','Governing law and dispute resolution'],
+            },
+            'shareholders_agreement': {
+                'label': 'Shareholders Agreement',
+                'description': 'C-corp or S-corp shareholder rights and restrictions',
+                'clauses': ['Company and all shareholders identification with share classes and counts','Board composition: size, election process, and investor board seat rights','Protective provisions requiring shareholder approval','Information rights: financial statements and inspection','Preemptive rights on new issuances','Right of first refusal on share transfers','Co-sale (tag-along) rights','Drag-along rights on approved sale','Founder vesting and repurchase rights','Anti-dilution protection for preferred shareholders','Deadlock resolution mechanism','Governing law'],
+            },
+            'franchise_agreement': {
+                'label': 'Franchise Agreement',
+                'description': 'Franchisor-franchisee license and operations agreement',
+                'clauses': ['Franchisor and franchisee full identification','Grant of franchise: territory, exclusivity, and term','Initial franchise fee and ongoing royalty percentage of gross sales','Marketing fund contribution percentage','Training obligations: initial and ongoing','Operations manual incorporation by reference','Brand standards, quality control, and inspection rights','Approved supplier requirements','Site selection approval process','Transfer restrictions and franchisor right of first refusal','Renewal conditions and fees','Termination for cause with cure period','Post-termination de-identification and non-compete','FDD disclosure compliance acknowledgment','Governing law'],
+            },
         }
     },
     'cannabis': {
@@ -480,10 +515,155 @@ CONTRACT_LIBRARY = {
                 'description': 'Wholesale cannabis distribution between licensees',
                 'clauses': ['OLCC license numbers and license types (producer, processor, wholesaler, retailer)','Territory definition and exclusivity terms','Product catalog, pricing schedule, and minimum order quantities','Minimum purchase commitments and take-or-pay provisions','Metrc manifest compliance for all wholesale transfers','COA delivery requirement with each shipment','Payment terms and accepted payment methods','Returns, damaged goods, and failed-test product policy','Promotional and marketing cooperation obligations','License compliance ongoing representations and warranties','Termination upon license suspension, revocation, or expiration','No assignment without regulatory approval','Governing law: State of Oregon, Marion County venue'],
             },
+            'retail_license_agreement': {
+                'label': 'Cannabis Retail License Purchase Agreement',
+                'description': 'Purchase or transfer of an OLCC retail cannabis license',
+                'clauses': ['Buyer and seller full legal names, entity types, and addresses','OLCC license number, license type (Recreational/Medical Retailer), and current license status','Purchase price for the license and associated business assets','Payment structure: down payment, seller financing, or full cash at closing','OLCC pre-approval of ownership transfer as a condition precedent to closing','Change of ownership application filing obligations and timeline','Representations that license is in good standing with no pending violations or suspensions','Seller obligation to cooperate with OLCC investigation and background check','Inventory, equipment, and leasehold improvements included or excluded','Lease assignment or new lease negotiation for the licensed premises','Non-compete clause: seller prohibited from operating competing cannabis retail within agreed radius and duration','Employee transition terms and at-will status acknowledgment','Regulatory compliance representations through closing date','Metrc account transfer and seed-to-sale tracking continuity','Indemnification for pre-closing regulatory violations','Termination right if OLCC denies transfer application','Governing law: State of Oregon; dispute resolution under ORS 475C'],
+            },
             'services_agreement': {
                 'label': 'Cannabis Services Agreement',
                 'description': 'Technology, consulting, or management services for licensees',
                 'clauses': ['OLCC licensee identification and license number','Services scope (technology, consulting, marketing, staffing)','No management contract structure acknowledgment (OAR 845-025-7580)','Service fees, payment terms, and expense reimbursement','Compliance advisory scope and limitations (not legal advice)','Confidentiality of customer data, sales data, and financial records','Data security, access controls, and breach notification','Background check compliance for all service personnel','Term, renewal, and termination with notice period','Limitation of liability for regulatory outcomes','Oregon governing law'],
+            },
+        }
+    },
+    'healthcare': {
+        'label': 'Healthcare',
+        'types': {
+            'hipaa_baa': {
+                'label': 'HIPAA Business Associate Agreement (BAA)',
+                'description': 'Required BAA for vendors handling protected health information',
+                'clauses': ['Covered entity and business associate full identification','Scope of PHI access and permitted uses','Prohibition on unauthorized use or disclosure of PHI','Safeguards: administrative, physical, and technical per HIPAA Security Rule','Subcontractor BAA requirement and flow-down obligations','Breach notification timeline (60 days) and content requirements','Termination: return or certified destruction of all PHI','HITECH Act compliance acknowledgment','Governing law'],
+            },
+            'medical_director_agreement': {
+                'label': 'Medical Director Agreement',
+                'description': 'Physician medical director services for a clinic or facility',
+                'clauses': ['Physician and facility full identification and medical license number','Scope of medical director duties: oversight, protocol development, staff supervision, quality review','Time commitment: hours per month and on-call obligations','Compensation: flat monthly fee or hourly rate','Independent contractor status and no employment relationship','Malpractice insurance requirements: occurrence or claims-made with tail','Corporate practice of medicine compliance','STARK Law and Anti-Kickback Statute compliance acknowledgment','Confidentiality of patient data and business information','Term, renewal, and termination with notice period','Governing law'],
+            },
+            'patient_services_agreement': {
+                'label': 'Patient / Client Services Agreement',
+                'description': 'Healthcare or wellness services agreement with patient',
+                'clauses': ['Provider and patient/client identification','Services to be provided and scope of care','Fees, payment schedule, and accepted payment methods','Insurance billing and patient responsibility for uncovered services','Cancellation and no-show policy and fees','HIPAA notice of privacy practices acknowledgment','Consent to treatment','Telehealth consent if applicable','Emergency protocol and referral process','Governing law'],
+            },
+            'telemedicine_agreement': {
+                'label': 'Telemedicine Services Agreement',
+                'description': 'Virtual care platform or telemedicine services contract',
+                'clauses': ['Platform provider and healthcare organization identification','Scope of telehealth services and supported specialties','Platform uptime SLA and downtime credits','HIPAA BAA incorporation by reference','State licensure compliance: provider credentialing by state','Informed consent requirements for telehealth visits','Data storage, encryption standards, and breach notification','Patient data ownership and portability','Term, renewal, and data migration on termination','Governing law'],
+            },
+        }
+    },
+    'hospitality': {
+        'label': 'Restaurant & Hospitality',
+        'types': {
+            'catering_contract': {
+                'label': 'Catering Agreement',
+                'description': 'Food and beverage catering services for events',
+                'clauses': ['Caterer and client identification','Event date, time, location, and estimated guest count','Menu: specific dishes, dietary accommodations, and service style','Staffing: number of servers, bartenders, and kitchen staff','Deposit amount and non-refundable terms','Final guest count deadline and price adjustment','Cancellation policy with tiered refund schedule','Force majeure and rescheduling terms','Health department compliance and food handling certifications','Governing law'],
+            },
+            'venue_rental_agreement': {
+                'label': 'Venue Rental Agreement',
+                'description': 'Event venue or space rental contract',
+                'clauses': ['Venue owner and renter identification','Venue address, specific spaces included, and capacity','Event date, setup time, event time, and cleanup deadline','Rental fee and payment schedule','Security deposit amount and return conditions','Permitted uses and prohibited activities','Alcohol policy and licensed bartender requirement','Noise restrictions and curfew','Maximum occupancy limit and compliance responsibility','Client responsible for guest behavior and damages','Insurance: client must provide event liability insurance naming venue as additional insured','Cancellation and rescheduling policy','Force majeure','Governing law'],
+            },
+            'food_service_agreement': {
+                'label': 'Food Service Agreement',
+                'description': 'Institutional food service or contract dining management',
+                'clauses': ['Food service operator and client identification','Facility and dining spaces covered','Meal program scope: breakfast, lunch, dinner, catering, vending','Pricing: cost-plus, fixed fee, or profit-and-loss model','Nutritional standards and allergen labeling compliance','Health department licensing and food safety certifications','Staffing: operator provides all food service employees','Financial reporting: weekly and monthly P&L statements','Client right to audit books and records','Term, renewal, and transition assistance on exit','Governing law'],
+            },
+        }
+    },
+    'retail': {
+        'label': 'Retail & Wholesale',
+        'types': {
+            'vendor_agreement': {
+                'label': 'Vendor / Supplier Agreement',
+                'description': 'Product supply and vendor relationship contract',
+                'clauses': ['Vendor and buyer/retailer full identification','Products covered: SKUs, descriptions, and specifications','Pricing, volume discounts, and price change notice requirements','Minimum order quantities and lead times','Delivery terms: FOB origin or FOB destination','Inspection and acceptance period: right to reject non-conforming goods','Payment terms and early payment discount','Warranty: merchantability, fitness for purpose, and defect remedy','Product liability insurance: minimum limits and additional insured','Recall procedure and cost allocation','Term, renewal, and termination with notice','Governing law'],
+            },
+            'consignment_agreement': {
+                'label': 'Consignment Agreement',
+                'description': 'Goods placed with a retailer for sale on consignment',
+                'clauses': ['Consignor and consignee (retailer) identification','Description of consigned goods and quantities','Retail pricing and consignor approval of price changes','Commission rate: retailer percentage of sale price','Settlement period and payment timing to consignor','Consignor retains title until sold','Risk of loss: retailer responsible for damage or theft while in possession','Unsold goods return policy and timeline','Record-keeping and sales reporting obligations','Insurance: retailer must insure consigned goods at retail value','Governing law'],
+            },
+            'wholesale_distribution_agreement': {
+                'label': 'Wholesale Distribution Agreement',
+                'description': 'Manufacturer-to-distributor wholesale contract',
+                'clauses': ['Manufacturer/supplier and distributor full identification','Territory: geographic area and exclusivity terms','Product line covered','Pricing: wholesale price list and update notice requirements','Minimum purchase commitments','Payment terms and credit limit','Order process, lead times, and backorder policy','Distributor obligations: sales targets, marketing support, and brand standards','Warranty pass-through to end customer','Trademark license for marketing purposes','Term, renewal, and termination with sell-off period','Governing law'],
+            },
+        }
+    },
+    'technology': {
+        'label': 'Technology',
+        'types': {
+            'app_development_agreement': {
+                'label': 'App / Software Development Agreement',
+                'description': 'Custom software or mobile app development contract',
+                'clauses': ['Developer and client full identification','Project scope: detailed feature list, platforms, and technical specifications','Development methodology: Agile sprint schedule or waterfall milestones','Deliverables and acceptance testing criteria','Timeline: milestone dates and final delivery date','Pricing: fixed fee, time-and-materials, or milestone-based payments','Change order process for scope modifications','Source code ownership: client owns all code and IP upon full payment','Third-party libraries and open-source components disclosure','Bug fix warranty period post-launch (typically 90 days)','Confidentiality of business requirements and proprietary information','Limitation of liability cap (total fees paid)','Governing law and dispute resolution'],
+            },
+            'data_processing_agreement': {
+                'label': 'Data Processing Agreement (DPA)',
+                'description': 'GDPR/CCPA compliant data processing contract',
+                'clauses': ['Data controller and data processor identification','Categories of personal data processed and data subjects','Processing purposes and legal basis','Processor shall only act on documented controller instructions','Security measures: technical and organizational safeguards','Sub-processor authorization and flow-down obligations','Data subject rights assistance: access, erasure, portability requests','Breach notification to controller within 72 hours of discovery','Data retention and deletion upon contract termination','Audit rights: controller may audit processor compliance annually','GDPR Article 28 compliance acknowledgment','Governing law'],
+            },
+            'white_label_agreement': {
+                'label': 'White Label Agreement',
+                'description': 'Reseller or white-label product/software agreement',
+                'clauses': ['Developer/provider and reseller full identification','Products or services licensed for white-label resale','Permitted customization: branding, UI, and feature configuration','Reseller territory and exclusivity terms','Wholesale pricing and reseller margin','Minimum volume commitments','End-user license terms: reseller must bind end users to compliant terms','Support obligations: reseller provides Tier 1, provider provides Tier 2','IP ownership: provider retains all underlying IP','Confidentiality of provider technology and pricing','Term, renewal, and wind-down of active customer accounts on termination','Governing law'],
+            },
+        }
+    },
+    'media': {
+        'label': 'Media & Entertainment',
+        'types': {
+            'talent_agreement': {
+                'label': 'Talent Agreement',
+                'description': 'Actor, spokesperson, influencer, or on-camera talent contract',
+                'clauses': ['Talent and production company/brand identification','Services: specific deliverables, shoot dates, and usage','Compensation: flat fee, day rate, or performance royalty','Usage rights: platforms, territories, and duration of license','Exclusivity: category exclusivity during and post-campaign','Morality clause: brand right to terminate on reputational harm','Union/non-union status and applicable guild agreements (SAG-AFTRA)','Image and likeness rights granted','Social media posting obligations and FTC disclosure requirements','Confidentiality of script, creative, and business terms','Kill fee on cancellation','Governing law'],
+            },
+            'content_creator_agreement': {
+                'label': 'Content Creator / Influencer Agreement',
+                'description': 'Brand partnership or sponsored content agreement',
+                'clauses': ['Brand and creator/influencer identification','Campaign deliverables: number of posts, stories, videos, and formats','Platforms: Instagram, TikTok, YouTube, podcast, or combination','Content approval process and revision rounds','Publishing schedule and deadline','Compensation: flat fee, commission, gifting, or combination','Exclusivity: competing brands restriction during and post-campaign','FTC disclosure requirements: #ad, #sponsored, or equivalent','Analytics reporting: reach, impressions, and engagement data delivery','Usage rights: brand right to repost and repurpose content','Governing law'],
+            },
+            'music_sync_license': {
+                'label': 'Music Sync License',
+                'description': 'License to use music in video, film, or advertising',
+                'clauses': ['Licensor (publisher/composer) and licensee (production) identification','Musical composition and sound recording identification (title, artist, ISRC)','Sync use: specific production title and description','Media: film, TV, online, advertising, or combination','Territory: worldwide or specific countries','Term: in perpetuity or defined period','Fee: one-time sync fee and master use fee','Credit requirement: as-broadcast credit language','Streaming and digital distribution rights','No modifications to the composition without separate permission','Governing law'],
+            },
+        }
+    },
+    'nonprofit': {
+        'label': 'Nonprofit & Government',
+        'types': {
+            'grant_agreement': {
+                'label': 'Grant Agreement',
+                'description': 'Funder-to-grantee grant award and compliance contract',
+                'clauses': ['Funder and grantee organization identification and tax status','Grant purpose and funded project description','Grant amount and disbursement schedule','Eligible expenses and prohibited uses of grant funds','Budget modification approval threshold','Reporting obligations: narrative and financial reports with due dates','Record-keeping requirements and retention period (minimum 7 years)','Audit rights and single audit threshold compliance','Grant closeout and unspent funds return policy','Governing law'],
+            },
+            'sponsorship_agreement': {
+                'label': 'Sponsorship Agreement',
+                'description': 'Event or organizational sponsorship and benefits contract',
+                'clauses': ['Sponsor and organization/event identification','Sponsorship level and cash or in-kind contribution amount','Sponsor benefits: logo placement, mentions, booth space, VIP tickets, speaking opportunities','Exclusivity: category sponsor protection from competing brands','Event date, location, and contingency on cancellation','Force majeure and refund policy on cancellation','Sponsor right to approve use of its name and marks','Post-event attendance and impression metrics reporting','Governing law'],
+            },
+            'volunteer_agreement': {
+                'label': 'Volunteer Agreement',
+                'description': 'Volunteer services and liability acknowledgment',
+                'clauses': ['Organization and volunteer identification','Volunteer role description and expected time commitment','Volunteer acknowledges no compensation and no employment relationship','Confidentiality of client information and organizational data','Photo and video release for organizational use','Background check consent if required for role','Liability waiver and assumption of risk for volunteer activities','Governing law'],
+            },
+        }
+    },
+    'transportation': {
+        'label': 'Transportation & Logistics',
+        'types': {
+            'freight_agreement': {
+                'label': 'Freight / Carrier Agreement',
+                'description': 'Shipper-to-carrier freight transportation contract',
+                'clauses': ['Shipper and carrier identification with DOT/MC number','Scope: commodity types, lanes, and service types (FTL, LTL, intermodal)','Rates: tariff schedule, fuel surcharge, and accessorial charges','Transit time commitments and on-time performance standards','Cargo liability: Carmack Amendment limits or negotiated higher limits','Carrier insurance requirements: cargo, auto, and GL minimums','Claims process: notice, filing deadline, and resolution timeline','Payment terms and invoice dispute process','Carrier compliance: FMCSA regulations, hours of service, drug testing program','Term, termination, and transition period','Governing law'],
+            },
+            'vehicle_lease_agreement': {
+                'label': 'Vehicle Lease Agreement',
+                'description': 'Commercial or fleet vehicle lease contract',
+                'clauses': ['Lessor and lessee identification','Vehicle description: year, make, model, VIN','Lease term and commencement date','Monthly lease payment and payment schedule','Mileage allowance and excess mileage charge per mile','Security deposit amount and return conditions','Insurance requirements: lessee must maintain comprehensive, collision, and liability minimums','Maintenance responsibilities: lessee responsible for routine maintenance','Early termination fee schedule','Residual value and purchase option at end of term','Return condition standards and excess wear charges','Governing law'],
             },
         }
     },
@@ -495,7 +675,12 @@ CONTRACT_LIBRARY = {
                 'description': 'Loan or debt instrument',
                 'clauses': ['Borrower and lender full legal names and addresses','Principal loan amount in words and figures','Interest rate (fixed or variable), calculation method (simple/compound), and basis (365/360)','Payment schedule: amount, frequency, due date, and first payment date','Maturity date and balloon payment if applicable','Prepayment rights and any prepayment penalty schedule','Default: definition, cure period, and automatic acceleration','Late payment penalty amount or percentage','Collateral description and security agreement reference if secured','Guarantor obligations and guarantee terms if applicable','Usury law compliance acknowledgment','Waiver of presentment, demand, protest, and notice of dishonor','Governing law and venue','Attorney fees clause for collection'],
             },
-            'loan_agreement': {
+            'equity_purchase_agreement': {
+                'label': 'Equity Purchase Agreement (SAFE / Convertible Note)',
+                'description': 'Early-stage equity investment instrument',
+                'clauses': ['Company and investor identification','Investment amount','Instrument type: SAFE or convertible note','Valuation cap and discount rate','Interest rate and maturity date (convertible note only)','Conversion triggers: qualified financing, liquidity event, or dissolution','Conversion mechanics: share class, price calculation, and cap table impact','Pro-rata rights in next financing round','MFN clause for SAFEs','Representations: company is duly organized, no material litigation, cap table accuracy','Governing law: Delaware preferred'],
+            },
+                        'loan_agreement': {
                 'label': 'Loan Agreement',
                 'description': 'Comprehensive lending agreement with covenants',
                 'clauses': ['Lender and borrower identification','Loan amount, purpose, and disbursement conditions','Interest rate, default rate, and calculation','Repayment schedule and amortization','Conditions precedent to funding','Financial covenants (DSCR, LTV, working capital minimums)','Affirmative covenants (financial reporting, insurance, taxes)','Negative covenants (no additional debt, no asset sale, no liens)','Events of default and cross-default provisions','Remedies and acceleration rights','Collateral, lien priority, and security agreement','Guaranty requirements','Loan fee schedule','Governing law and jurisdiction'],
@@ -567,10 +752,48 @@ def _quick_classify(deal):
         (['letter of intent','loi','intent to acquire','intent to purchase business'], 'business','letter_of_intent'),
         (['asset purchase','business acquisition','buy the business','purchase of assets'], 'business','asset_purchase'),
         (['operating agreement','llc agreement','partnership agreement','member agreement'], 'business','operating_agreement'),
-        (['cannabis','olcc','hemp','dispensary','producer','processor','marijuana'], 'cannabis','production_agreement'),
-        (['distribution agreement','wholesale','distributor','distribute cannabis'], 'cannabis','distribution_agreement'),
+        (['cannabis production','olcc producer','olcc processor','hemp producer','cultivation agreement','processing agreement'], 'cannabis','production_agreement'),
+        (['cannabis distribution','wholesale cannabis','distribute cannabis','cannabis distributor','olcc wholesale'], 'cannabis','distribution_agreement'),
+        (['dispensary','retail license','olcc retail','cannabis retail','recreational retail','medical retail','cannabis store','cannabis shop','marijuana retail'], 'cannabis','retail_license_agreement'),
+        (['cannabis','olcc','hemp','marijuana'], 'cannabis','services_agreement'),
         (['promissory note','loan agreement','personal loan','business loan','lender','borrower'], 'finance','promissory_note'),
-        (['ip license','trademark license','patent license','brand license','franchise'], 'licensing','ip_license'),
+        (['ip license','trademark license','patent license','brand license'], 'licensing','ip_license'),
+        (['franchise agreement','franchise disclosure','franchisee','franchisor'], 'business','franchise_agreement'),
+        (['joint venture','jv agreement','joint development'], 'business','joint_venture_agreement'),
+        (['shareholders agreement','shareholder rights','share transfer'], 'business','shareholders_agreement'),
+        (['partnership agreement','general partnership','limited partnership'], 'business','partnership_agreement'),
+        (['property management','property manager','rental management'], 'real_estate','property_management_agreement'),
+        (['buyer representation','buyer agency','buyer agent'], 'real_estate','buyers_representation_agreement'),
+        (['option agreement','purchase option','right to purchase'], 'real_estate','option_agreement'),
+        (['marketing agreement','digital marketing','seo services','social media marketing','advertising agency'], 'services','marketing_agreement'),
+        (['event planning','event coordinator','event services','wedding planning'], 'services','event_contract'),
+        (['maintenance agreement','janitorial','landscaping services','facilities management'], 'services','maintenance_agreement'),
+        (['staffing agency','temp agency','placement agency','temporary staffing'], 'services','staffing_agreement'),
+        (['separation agreement','severance agreement','termination agreement','release of claims'], 'employment','separation_agreement'),
+        (['non-compete','noncompete','covenant not to compete'], 'employment','non_compete_agreement'),
+        (['equity grant','stock grant','vesting agreement','rsu grant','option grant'], 'employment','equity_vesting_agreement'),
+        (['hipaa','business associate agreement','baa','protected health information'], 'healthcare','hipaa_baa'),
+        (['medical director','physician director','clinical director'], 'healthcare','medical_director_agreement'),
+        (['patient agreement','patient services','clinic services'], 'healthcare','patient_services_agreement'),
+        (['telemedicine','telehealth','virtual care','virtual visit'], 'healthcare','telemedicine_agreement'),
+        (['catering','catered event','food and beverage event'], 'hospitality','catering_contract'),
+        (['venue rental','event venue','hall rental','space rental'], 'hospitality','venue_rental_agreement'),
+        (['food service','contract dining','cafeteria management','institutional food'], 'hospitality','food_service_agreement'),
+        (['vendor agreement','supplier agreement','product supply'], 'retail','vendor_agreement'),
+        (['consignment','consignment shop','consignment goods'], 'retail','consignment_agreement'),
+        (['wholesale distribution','wholesale agreement','distributor agreement'], 'retail','wholesale_distribution_agreement'),
+        (['app development','software development','mobile app','custom software','web application'], 'technology','app_development_agreement'),
+        (['data processing agreement','dpa','gdpr','data processor','personal data processing'], 'technology','data_processing_agreement'),
+        (['white label','whitelabel','reseller agreement','private label software'], 'technology','white_label_agreement'),
+        (['talent agreement','actor agreement','spokesperson','on-camera talent'], 'media','talent_agreement'),
+        (['influencer','content creator','brand deal','sponsored content','ugc agreement'], 'media','content_creator_agreement'),
+        (['sync license','music license','music sync','song license'], 'media','music_sync_license'),
+        (['grant agreement','grant award','grantee','grant funding'], 'nonprofit','grant_agreement'),
+        (['sponsorship agreement','event sponsor','corporate sponsor'], 'nonprofit','sponsorship_agreement'),
+        (['volunteer agreement','volunteer services','volunteer waiver'], 'nonprofit','volunteer_agreement'),
+        (['freight agreement','carrier agreement','shipping contract','trucking agreement'], 'transportation','freight_agreement'),
+        (['vehicle lease','fleet lease','truck lease','car lease commercial'], 'transportation','vehicle_lease_agreement'),
+        (['safe note','convertible note','equity investment','startup investment','seed investment'], 'finance','equity_purchase_agreement'),
     ]
     for keywords, industry, contract_type in patterns:
         if any(kw in text for kw in keywords):
@@ -1208,6 +1431,17 @@ def suggest_contracts(deal_id):
     db.close()
     if not deal: return jsonify({'error':'Not found'}),404
     suggestions=_classify_contract(dict(deal))
+
+    # Always inject NDA as standard for any deal
+    nda_ct=CONTRACT_LIBRARY['employment']['types']['nda']
+    nda_entry={'industry':'employment','type':'nda','label':nda_ct['label'],'description':nda_ct['description'],'reason':'Standard for any deal — protects confidential information shared between parties','clauses':nda_ct['clauses']}
+    if not any(s['type']=='nda' for s in suggestions):
+        suggestions.append(nda_entry)
+
+    # Always inject Invoice as standard for any deal
+    invoice_entry={'industry':'_invoice','type':'invoice','label':'Invoice','description':'Standard payment invoice for this deal','reason':'Standard for any deal — documents the payment obligation','clauses':[]}
+    suggestions.append(invoice_entry)
+
     library={ind:{'label':val['label'],'types':{k:{'label':v['label'],'description':v['description']} for k,v in val['types'].items()}} for ind,val in CONTRACT_LIBRARY.items()}
     return jsonify({'suggestions':suggestions,'library':library})
 
@@ -1219,15 +1453,42 @@ def generate_contract_for_deal(deal_id):
     deal=db.execute('SELECT * FROM deals WHERE id=? AND org_id=?',(deal_id,user['org_id'])).fetchone()
     if not deal: db.close(); return jsonify({'error':'Not found'}),404
     d=request.json or {}
-    # Resolve contract type: use explicit selection or classify from deal data
     ct_key=d.get('contract_type','')
+
+    # Handle invoice as a special type — generate PDF invoice, not a contract
+    if ct_key=='_invoice/invoice':
+        dd=dict(deal)
+        amount=float(dd.get('purchase_price') or 0)
+        org=db.execute('SELECT * FROM organizations WHERE id=?',(user['org_id'],)).fetchone()
+        from_name=(dict(org).get('name') if org else None) or 'Your Company'
+        inv_num=secrets.token_hex(4).upper()
+        date_str=datetime.datetime.now().strftime('%B %d, %Y')
+        payment_terms=dd.get('payment_terms') or 'Net 30'
+        try: days=int(''.join(filter(str.isdigit, payment_terms)) or '30')
+        except: days=30
+        due=(datetime.datetime.now()+datetime.timedelta(days=days)).strftime('%B %d, %Y')
+        description=dd.get('deal_name') or 'Services'
+        if dd.get('property_address'): description+=f' — {dd["property_address"]}'
+        fp=os.path.join(DOCS_DIR,f'invoice_{deal_id}_{int(time.time())}.pdf')
+        _invoice_to_pdf(fp,inv_num,date_str,due,from_name,
+                        dd.get('buyer_name',''),dd.get('buyer_email',''),
+                        description,amount,0,amount,payment_terms)
+        title=f'Invoice #{inv_num} — {dd["deal_name"]}'
+        db.execute('INSERT INTO generated_documents (org_id,doc_type,title,data_json,file_path,status) VALUES (?,?,?,?,?,?)',
+            (user['org_id'],'invoice',title,json.dumps(dd),fp,'draft')); db.commit()
+        doc=db.execute('SELECT * FROM generated_documents WHERE org_id=? ORDER BY id DESC LIMIT 1',(user['org_id'],)).fetchone()
+        db.close(); return jsonify({'success':True,'doc_id':doc['id'],'title':title,'content':'Invoice generated.'}),201
+
+    # Resolve contract type: use explicit selection or re-classify from current deal state
     if ct_key and '/' in ct_key:
         ind,typ=ct_key.split('/',1)
         if ind in CONTRACT_LIBRARY and typ in CONTRACT_LIBRARY[ind]['types']:
             ct=CONTRACT_LIBRARY[ind]['types'][typ]
             suggestion={'industry':ind,'type':typ,'label':ct['label'],'clauses':ct['clauses']}
         else: suggestion=_classify_contract(dict(deal))[0]
-    else: suggestion=_classify_contract(dict(deal))[0]
+    else:
+        classified=_classify_contract(dict(deal))
+        suggestion=classified[0] if classified else {'industry':'other','type':'general_agreement','label':'General Agreement','clauses':CONTRACT_LIBRARY['other']['types']['general_agreement']['clauses']}
     transcript=''
     if deal['session_id']:
         msgs=db.execute('SELECT role,message FROM conversations WHERE session_id=? ORDER BY created_at',(deal['session_id'],)).fetchall()

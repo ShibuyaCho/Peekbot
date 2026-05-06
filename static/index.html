@@ -487,6 +487,13 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1rem 2rem;display:fl
             <option value="cannabis">Cannabis / OLCC</option>
             <option value="finance">Finance &amp; Lending</option>
             <option value="licensing">Licensing &amp; IP</option>
+            <option value="healthcare">Healthcare</option>
+            <option value="hospitality">Restaurant &amp; Hospitality</option>
+            <option value="retail">Retail &amp; Wholesale</option>
+            <option value="technology">Technology</option>
+            <option value="media">Media &amp; Entertainment</option>
+            <option value="nonprofit">Nonprofit &amp; Government</option>
+            <option value="transportation">Transportation &amp; Logistics</option>
             <option value="other">Other</option>
           </select>
         </div>
@@ -978,7 +985,24 @@ async function saveDeal(){
   const data={deal_name:document.getElementById('dealName').value,property_address:document.getElementById('dealAddress').value,buyer_name:document.getElementById('dealBuyerName').value,buyer_email:document.getElementById('dealBuyerEmail').value,seller_name:document.getElementById('dealSellerName').value,seller_email:document.getElementById('dealSellerEmail').value,purchase_price:parseFloat(document.getElementById('dealPrice').value)||null,commission_amount:parseFloat(document.getElementById('dealCommission').value)||null,earnest_money:parseFloat(document.getElementById('dealEarnest').value)||null,closing_date:document.getElementById('dealClosing').value||null,deal_status:document.getElementById('dealStatus').value,notes:document.getElementById('dealNotes').value,industry:document.getElementById('dealIndustry').value||null,deal_type:document.getElementById('dealType').value||null,jurisdiction:document.getElementById('dealJurisdiction').value||null,payment_terms:document.getElementById('dealPaymentTerms').value||null,contract_requirements:document.getElementById('dealContractRequirements').value||null};
   try{
     const r=await fetch(API+(id?'/api/deals/'+id:'/api/deals'),{method:id?'PUT':'POST',headers:{Authorization:'Bearer '+userToken,'Content-Type':'application/json'},body:JSON.stringify(data)});
-    if(r.ok){const saved=await r.json();currentDealId=saved.id;closeDealModal();showToast(id?'Deal updated':'Deal created');loadDeals();}
+    if(r.ok){
+      const saved=await r.json();currentDealId=saved.id;
+      try{
+        const cr=await fetch(API+'/api/deals/'+saved.id+'/auto-classify',{method:'POST',headers:{Authorization:'Bearer '+userToken}});
+        if(cr.ok){
+          const cd=await cr.json();
+          const indEl=document.getElementById('dealIndustry');
+          const jurEl=document.getElementById('dealJurisdiction');
+          const typEl=document.getElementById('dealType');
+          const payEl=document.getElementById('dealPaymentTerms');
+          if(indEl&&!indEl.value&&cd.industry)indEl.value=cd.industry;
+          if(jurEl&&!jurEl.value&&cd.jurisdiction)jurEl.value=cd.jurisdiction;
+          if(typEl&&!typEl.value&&cd.deal_type)typEl.value=cd.deal_type;
+          if(payEl&&!payEl.value&&cd.payment_terms)payEl.value=cd.payment_terms;
+        }
+      }catch(e){}
+      closeDealModal();showToast(id?'Deal updated — contracts re-detected':'Deal created');loadDeals();
+    }
     else{const e=await r.json();showToast('Error: '+(e.error||'Unknown'));}
   }catch(e){showToast('Error');}
 }
@@ -1098,7 +1122,7 @@ async function generateSelectedContracts(){
   btn.disabled=true; statusEl.style.display='block';
   const generated=[];
   for(const contractType of selected){
-    const label=contractType.split('/')[1].replace(/_/g,' ');
+    const label=contractType==='_invoice/invoice'?'Invoice':contractType.split('/')[1].replace(/_/g,' ');
     statusEl.textContent=`Generating ${label} (${generated.length+1}/${selected.length})…`;
     try{
       const r=await fetch(API+'/api/generate-contract-for-deal/'+id,{method:'POST',headers:{Authorization:'Bearer '+userToken,'Content-Type':'application/json'},body:JSON.stringify({contract_type:contractType})});
