@@ -137,7 +137,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1rem 2rem;display:fl
 .toast.show{transform:translateX(-50%) translateY(0);}
 .data-source-item{background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;}
 .kb-item{background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;}
-.kb-content{font-size:.8rem;color:var(--text);line-height:1.5;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.kb-content{font-size:.8rem;color:var(--text);line-height:1.5;flex:1;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .kb-source{font-size:.7rem;color:var(--muted);margin-top:.25rem;}
 .session-row{background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.75rem;cursor:pointer;transition:border-color .2s;}
 .session-row:hover{border-color:rgba(255,255,255,0.2);}
@@ -473,9 +473,34 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1rem 2rem;display:fl
       <div class="form-group"><label>&nbsp;</label></div>
       <div class="form-group" style="grid-column:span 2;"><label>Notes</label><textarea id="dealNotes" rows="2" placeholder="Any notes..."></textarea></div>
     </div>
+    <div style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:1rem;">
+      <div style="font-size:.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.75rem;font-weight:600;">&#128196; Contract Details</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Industry</label>
+          <select id="dealIndustry">
+            <option value="">— Select Industry —</option>
+            <option value="real_estate">Real Estate</option>
+            <option value="services">Services &amp; Consulting</option>
+            <option value="employment">Employment &amp; HR</option>
+            <option value="construction">Construction</option>
+            <option value="business">Business &amp; M&amp;A</option>
+            <option value="cannabis">Cannabis / OLCC</option>
+            <option value="finance">Finance &amp; Lending</option>
+            <option value="licensing">Licensing &amp; IP</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Jurisdiction</label><input type="text" id="dealJurisdiction" placeholder="e.g. Oregon, California"/></div>
+        <div class="form-group"><label>Deal Type <span style="color:var(--muted);font-size:.7rem;">(be specific)</span></label><input type="text" id="dealType" placeholder="e.g. Residential Purchase, SaaS License, NDA"/></div>
+        <div class="form-group"><label>Payment Terms</label><input type="text" id="dealPaymentTerms" placeholder="e.g. Net 30, At Closing, Monthly"/></div>
+        <div class="form-group" style="grid-column:span 2;"><label>Contract Requirements <span style="color:var(--muted);font-size:.7rem;">(specific clauses, contingencies, or special terms)</span></label>
+          <textarea id="dealContractRequirements" rows="2" placeholder="e.g. Include 30-day inspection period, seller pays closing costs, non-compete 2 years Portland metro..."></textarea>
+        </div>
+      </div>
+    </div>
     <div style="display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap;">
       <button class="btn btn-primary" style="flex:1;" onclick="saveDeal()">Save Deal</button>
-      <button class="btn btn-green" id="generateContractBtn" style="display:none;" onclick="generateContractForDeal()">&#128196; Generate Contract</button>
+      <button class="btn btn-green" id="generateContractBtn" style="display:none;" onclick="openContractSelector()">&#128196; Generate Contract</button>
       <button class="btn btn-ghost" onclick="closeDealModal()">Cancel</button>
       <button class="btn btn-danger" id="dealDeleteBtn" style="display:none;" onclick="deleteDeal()">Delete</button>
     </div>
@@ -565,6 +590,21 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1rem 2rem;display:fl
       <button class="btn btn-ghost" onclick="document.getElementById('generateDocModal').classList.remove('active')">Cancel</button>
     </div>
     <button class="modal-close" onclick="document.getElementById('generateDocModal').classList.remove('active')">&#10005;</button>
+  </div>
+</div>
+
+<!-- CONTRACT INTELLIGENCE MODAL -->
+<div class="modal-overlay" id="contractSelectorModal">
+  <div class="modal modal-lg">
+    <h2>&#128196; Contract Intelligence</h2>
+    <p id="contractSelectorSub">Analyzing your deal&hellip;</p>
+    <div id="contractSuggestionsList" style="margin-top:.75rem;"></div>
+    <div id="contractGenStatus" style="display:none;font-size:.82rem;color:var(--accent);margin-top:.75rem;min-height:1.2em;"></div>
+    <div style="display:flex;gap:.5rem;margin-top:1rem;">
+      <button class="btn btn-primary" style="flex:1;" id="contractGenBtn" onclick="generateSelectedContracts()">Generate Selected &rarr;</button>
+      <button class="btn btn-ghost" onclick="closeContractSelector()">Cancel</button>
+    </div>
+    <button class="modal-close" onclick="closeContractSelector()">&#10005;</button>
   </div>
 </div>
 
@@ -900,7 +940,7 @@ function renderDeals(){
       '<td>'+(d.purchase_price?'$'+Number(d.purchase_price).toLocaleString():'—')+'</td>'+
       '<td><span class="status-badge status-'+(d.deal_status||'lead')+'">'+(d.deal_status||'lead')+'</span></td>'+
       '<td>'+(d.source==='chat'?'<span class="source-chat">Chat</span>':'<span style="font-size:.72rem;color:var(--muted);">Manual</span>')+'</td>'+
-      '<td><button class="btn btn-ghost btn-sm" onclick="openDealById('+d.id+')">Edit</button></td></tr>').join('')+
+      '<td style="white-space:nowrap;"><button class="btn btn-ghost btn-sm" onclick="openDealById('+d.id+')">Edit</button> <button class="btn btn-sm" style="background:rgba(124,106,247,0.15);color:var(--accent);border:1px solid rgba(124,106,247,0.3);" onclick="openContractSelector('+d.id+')">&#128196; Contracts</button></td></tr>').join('')+
     '</tbody></table></div>';
 }
 function openDealModal(deal){
@@ -920,6 +960,12 @@ function openDealModal(deal){
   document.getElementById('dealClosing').value=isEdit?(deal.closing_date||''):'';
   document.getElementById('dealStatus').value=isEdit?(deal.deal_status||'lead'):'lead';
   document.getElementById('dealNotes').value=isEdit?(deal.notes||''):'';
+  document.getElementById('dealIndustry').value=isEdit?(deal.industry||''):'';
+  document.getElementById('dealJurisdiction').value=isEdit?(deal.jurisdiction||''):'';
+  document.getElementById('dealType').value=isEdit?(deal.deal_type||''):'';
+  document.getElementById('dealPaymentTerms').value=isEdit?(deal.payment_terms||''):'';
+  document.getElementById('dealContractRequirements').value=isEdit?(deal.contract_requirements||''):'';
+  if(isEdit&&(!deal.industry||!deal.deal_type||!deal.jurisdiction))_autoFillContractFields(deal.id);
   document.getElementById('dealDeleteBtn').style.display=isEdit?'inline-flex':'none';
   document.getElementById('generateContractBtn').style.display=isEdit?'inline-flex':'none';
   document.getElementById('contractPreviewArea').style.display='none';
@@ -929,7 +975,7 @@ function openDealModal(deal){
 function closeDealModal(){document.getElementById('dealModal').classList.remove('active');currentDealId=null;}
 async function saveDeal(){
   const id=document.getElementById('dealId').value;
-  const data={deal_name:document.getElementById('dealName').value,property_address:document.getElementById('dealAddress').value,buyer_name:document.getElementById('dealBuyerName').value,buyer_email:document.getElementById('dealBuyerEmail').value,seller_name:document.getElementById('dealSellerName').value,seller_email:document.getElementById('dealSellerEmail').value,purchase_price:parseFloat(document.getElementById('dealPrice').value)||null,commission_amount:parseFloat(document.getElementById('dealCommission').value)||null,earnest_money:parseFloat(document.getElementById('dealEarnest').value)||null,closing_date:document.getElementById('dealClosing').value||null,deal_status:document.getElementById('dealStatus').value,notes:document.getElementById('dealNotes').value};
+  const data={deal_name:document.getElementById('dealName').value,property_address:document.getElementById('dealAddress').value,buyer_name:document.getElementById('dealBuyerName').value,buyer_email:document.getElementById('dealBuyerEmail').value,seller_name:document.getElementById('dealSellerName').value,seller_email:document.getElementById('dealSellerEmail').value,purchase_price:parseFloat(document.getElementById('dealPrice').value)||null,commission_amount:parseFloat(document.getElementById('dealCommission').value)||null,earnest_money:parseFloat(document.getElementById('dealEarnest').value)||null,closing_date:document.getElementById('dealClosing').value||null,deal_status:document.getElementById('dealStatus').value,notes:document.getElementById('dealNotes').value,industry:document.getElementById('dealIndustry').value||null,deal_type:document.getElementById('dealType').value||null,jurisdiction:document.getElementById('dealJurisdiction').value||null,payment_terms:document.getElementById('dealPaymentTerms').value||null,contract_requirements:document.getElementById('dealContractRequirements').value||null};
   try{
     const r=await fetch(API+(id?'/api/deals/'+id:'/api/deals'),{method:id?'PUT':'POST',headers:{Authorization:'Bearer '+userToken,'Content-Type':'application/json'},body:JSON.stringify(data)});
     if(r.ok){const saved=await r.json();currentDealId=saved.id;closeDealModal();showToast(id?'Deal updated':'Deal created');loadDeals();}
@@ -942,20 +988,134 @@ async function deleteDeal(){
   await fetch(API+'/api/deals/'+id,{method:'DELETE',headers:{Authorization:'Bearer '+userToken}});
   closeDealModal();showToast('Deal deleted');loadDeals();
 }
-async function generateContractForDeal(){
-  const id=document.getElementById('dealId').value;if(!id)return;
-  const btn=document.getElementById('generateContractBtn');
-  btn.textContent='⏳ Generating...';btn.disabled=true;
+let contractSuggestions=[],contractLibrary={},currentContractDealId=null;
+
+async function _autoFillContractFields(dealId){
+  const industryEl=document.getElementById('dealIndustry');
+  const jurisdictionEl=document.getElementById('dealJurisdiction');
+  const typeEl=document.getElementById('dealType');
+  const paymentEl=document.getElementById('dealPaymentTerms');
+  // Show subtle loading hint only on empty fields
+  const empties=[industryEl,jurisdictionEl,typeEl,paymentEl].filter(el=>!el.value);
+  empties.forEach(el=>{if(!el.value)el.placeholder='Detecting…';});
   try{
-    const r=await fetch(API+'/api/generate-contract-for-deal/'+id,{method:'POST',headers:{Authorization:'Bearer '+userToken}});
+    const r=await fetch(API+'/api/deals/'+dealId+'/auto-classify',{method:'POST',headers:{Authorization:'Bearer '+userToken}});
+    if(!r.ok)return;
     const d=await r.json();
-    if(d.success){
-      document.getElementById('contractPreviewArea').style.display='block';
-      document.getElementById('contractPreviewText').textContent=d.content;
-      showToast('Contract generated!');loadDocs();
-    }else{showToast('Error: '+(d.error||'Unknown'));}
-  }catch(e){showToast('Error generating contract');}
-  btn.textContent='📄 Generate Contract';btn.disabled=false;
+    if(d.industry&&!industryEl.value)industryEl.value=d.industry;
+    if(d.jurisdiction&&!jurisdictionEl.value)jurisdictionEl.value=d.jurisdiction;
+    if(d.deal_type&&!typeEl.value)typeEl.value=d.deal_type;
+    if(d.payment_terms&&!paymentEl.value)paymentEl.value=d.payment_terms;
+  }catch(e){}
+  // Restore placeholders
+  industryEl.placeholder=''; jurisdictionEl.placeholder='e.g. Oregon, California';
+  typeEl.placeholder='e.g. Residential Purchase, SaaS License, NDA';
+  paymentEl.placeholder='e.g. Net 30, At Closing, Monthly';
+}
+
+async function openContractSelector(dealIdOverride){
+  const id=dealIdOverride||document.getElementById('dealId').value;if(!id)return;
+  currentContractDealId=parseInt(id);
+  const btn=document.getElementById('generateContractBtn');
+  if(btn){btn.textContent='⏳ Analyzing...';btn.disabled=true;}
+  document.getElementById('contractSelectorSub').textContent='Analyzing your deal to recommend the right contracts…';
+  document.getElementById('contractSuggestionsList').innerHTML='<div style="color:var(--muted);font-size:.82rem;padding:.5rem 0;"><span class="spinner"></span> Thinking…</div>';
+  document.getElementById('contractGenStatus').style.display='none';
+  document.getElementById('contractSelectorModal').classList.add('active');
+  try{
+    const r=await fetch(API+'/api/deals/'+id+'/suggest-contracts',{headers:{Authorization:'Bearer '+userToken}});
+    const data=await r.json();
+    contractSuggestions=data.suggestions||[];contractLibrary=data.library||{};
+    document.getElementById('contractSelectorSub').textContent='Select which contracts to generate for this deal.';
+    renderContractSelector();
+  }catch(e){document.getElementById('contractSuggestionsList').innerHTML='<div style="color:var(--red);font-size:.82rem;">Error analyzing deal. Try again.</div>';}
+  if(btn){btn.textContent='📄 Generate Contract';btn.disabled=false;}
+}
+
+function renderContractSelector(){
+  const el=document.getElementById('contractSuggestionsList');
+  let html='';
+  if(contractSuggestions.length){
+    html+='<div style="font-size:.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.6rem;font-weight:600;">Recommended for this deal</div>';
+    html+=contractSuggestions.map(s=>`
+      <label style="display:flex;align-items:flex-start;gap:.75rem;background:rgba(124,106,247,0.06);border:1px solid rgba(124,106,247,0.25);border-radius:10px;padding:.9rem 1rem;margin-bottom:.5rem;cursor:pointer;">
+        <input type="checkbox" name="contract_sel" value="${s.industry}/${s.type}" checked style="margin-top:.2rem;flex-shrink:0;accent-color:var(--accent);">
+        <div style="flex:1;">
+          <div style="color:white;font-weight:600;font-size:.88rem;">${esc(s.label)}</div>
+          <div style="font-size:.74rem;color:var(--accent);margin:.15rem 0 .3rem;">${esc(s.reason)}</div>
+          <div style="font-size:.71rem;color:var(--muted);line-height:1.5;">${s.clauses.slice(0,3).map(c=>'• '+esc(c)).join('&nbsp;&nbsp;')} <span style="color:rgba(255,255,255,0.25);">+${s.clauses.length-3} more required sections</span></div>
+        </div>
+      </label>`).join('');
+  }
+  // Manual add from full library
+  const industryOpts=Object.entries(contractLibrary).map(([k,v])=>`<option value="${k}">${esc(v.label)}</option>`).join('');
+  html+=`<div style="margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--border);">
+    <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem;">Add another contract from library</div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+      <select id="addContractIndustry" onchange="updateContractTypeOptions()" style="flex:1;min-width:140px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.45rem .75rem;color:white;font-size:.8rem;outline:none;">
+        <option value="">— Industry —</option>${industryOpts}
+      </select>
+      <select id="addContractType" style="flex:1;min-width:160px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.45rem .75rem;color:white;font-size:.8rem;outline:none;">
+        <option value="">— Contract Type —</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="addManualContract()" style="flex-shrink:0;">Add</button>
+    </div>
+  </div>`;
+  el.innerHTML=html;
+}
+
+function updateContractTypeOptions(){
+  const ind=document.getElementById('addContractIndustry').value;
+  const typeEl=document.getElementById('addContractType');
+  if(!ind||!contractLibrary[ind]){typeEl.innerHTML='<option value="">— Contract Type —</option>';return;}
+  typeEl.innerHTML='<option value="">— Contract Type —</option>'+
+    Object.entries(contractLibrary[ind].types).map(([k,v])=>`<option value="${ind}/${k}">${esc(v.label)}</option>`).join('');
+}
+
+function addManualContract(){
+  const val=document.getElementById('addContractType').value;if(!val)return;
+  const existing=Array.from(document.querySelectorAll('input[name="contract_sel"]')).map(i=>i.value);
+  if(existing.includes(val)){showToast('Already in list');return;}
+  const [ind,typ]=val.split('/');const typeInfo=contractLibrary[ind]?.types[typ];if(!typeInfo)return;
+  const wrap=document.createElement('label');
+  wrap.style.cssText='display:flex;align-items:flex-start;gap:.75rem;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;margin-bottom:.5rem;cursor:pointer;';
+  wrap.innerHTML=`<input type="checkbox" name="contract_sel" value="${val}" checked style="margin-top:.2rem;flex-shrink:0;accent-color:var(--accent);">
+    <div><div style="color:white;font-weight:600;font-size:.88rem;">${esc(typeInfo.label)}</div>
+    <div style="font-size:.74rem;color:var(--muted);">${esc(typeInfo.description)}</div></div>`;
+  const addSection=document.getElementById('contractSuggestionsList').lastElementChild;
+  document.getElementById('contractSuggestionsList').insertBefore(wrap,addSection);
+  document.getElementById('addContractIndustry').value='';
+  document.getElementById('addContractType').innerHTML='<option value="">— Contract Type —</option>';
+}
+
+async function generateSelectedContracts(){
+  const selected=Array.from(document.querySelectorAll('input[name="contract_sel"]:checked')).map(i=>i.value);
+  if(!selected.length){showToast('Select at least one contract');return;}
+  const id=currentContractDealId||document.getElementById('dealId').value;
+  if(!id){showToast('No deal selected');return;}
+  const statusEl=document.getElementById('contractGenStatus');
+  const btn=document.getElementById('contractGenBtn');
+  btn.disabled=true; statusEl.style.display='block';
+  const generated=[];
+  for(const contractType of selected){
+    const label=contractType.split('/')[1].replace(/_/g,' ');
+    statusEl.textContent=`Generating ${label} (${generated.length+1}/${selected.length})…`;
+    try{
+      const r=await fetch(API+'/api/generate-contract-for-deal/'+id,{method:'POST',headers:{Authorization:'Bearer '+userToken,'Content-Type':'application/json'},body:JSON.stringify({contract_type:contractType})});
+      const d=await r.json();
+      if(d.success){generated.push(d.title||label);}
+      else{statusEl.textContent='Error on '+label+': '+(d.error||'Unknown');}
+    }catch(e){statusEl.textContent='Network error on '+label;}
+  }
+  statusEl.textContent=`✓ ${generated.length} contract${generated.length===1?'':'s'} generated`;
+  btn.disabled=false;
+  setTimeout(()=>{closeContractSelector();loadDocs();showToast(generated.length+' contract'+(generated.length===1?'':'s')+' saved to Documents');},1400);
+}
+
+function closeContractSelector(){
+  document.getElementById('contractSelectorModal').classList.remove('active');
+  document.getElementById('contractGenStatus').style.display='none';
+  currentContractDealId=null;
 }
 
 // TEAM
@@ -994,7 +1154,7 @@ async function loadDocs(){
     if(!docs.length){c.innerHTML='<div class="empty-state" style="padding:.5rem;">No documents.</div>';return;}
     c.innerHTML=docs.map(d=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);">'+
       '<div><div style="font-size:.82rem;color:white;">'+esc(d.title||d.doc_type)+'</div><div style="font-size:.7rem;color:var(--muted);">'+d.doc_type+' · '+new Date(d.created_at).toLocaleDateString()+'</div></div>'+
-      '<div style="display:flex;gap:.3rem;"><a href="'+API+'/api/documents/'+d.id+'/download" class="btn btn-ghost btn-sm" style="text-decoration:none;" download>↓</a><button class="btn btn-danger btn-sm" onclick="deleteDoc('+d.id+')">✕</button></div></div>').join('');
+      '<div style="display:flex;gap:.3rem;"><a href="'+API+'/api/documents/'+d.id+'/download?token='+encodeURIComponent(userToken)+'" class="btn btn-ghost btn-sm" style="text-decoration:none;" target="_blank">↓ PDF</a><button class="btn btn-danger btn-sm" onclick="deleteDoc('+d.id+')">✕</button></div></div>').join('');
   }catch(e){}
 }
 function showGenerateDocModal(){document.getElementById('genDocTitle').value=document.getElementById('genDocDetails').value='';document.getElementById('genDocStatus').textContent='';document.getElementById('generateDocModal').classList.add('active');}
