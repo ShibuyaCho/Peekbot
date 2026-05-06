@@ -32,287 +32,141 @@ QB_CLIENT_ID     = os.environ.get('QB_CLIENT_ID', '')
 QB_CLIENT_SECRET = os.environ.get('QB_CLIENT_SECRET', '')
 QB_REDIRECT_URI  = os.environ.get('QB_REDIRECT_URI', f'{BASE_URL}/api/quickbooks/callback')
 
-DB        = '/home/jackson/peekbot.db'
+DB         = '/home/jackson/peekbot.db'
 UPLOAD_DIR = os.path.expanduser('~/Peekbot/uploads')
 DOCS_DIR   = os.path.expanduser('~/Peekbot/documents')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(DOCS_DIR, exist_ok=True)
 ALLOWED_EXT = {'pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg'}
+FREE_MSG_LIMIT     = 10
+AUTO_SYNC_INTERVAL = 7200
 
-FREE_MSG_LIMIT = 10  # per month
-
-AUTO_SYNC_INTERVAL = 7200  # 2 hours in seconds
-
-# ─── RATE LIMITING ───
 _rate = defaultdict(list)
 
 def rate_ok(key, limit=20):
     now = time.time()
     _rate[key] = [t for t in _rate[key] if now - t < 60]
-    if len(_rate[key]) >= limit:
-        return False
-    _rate[key].append(now)
-    return True
+    if len(_rate[key]) >= limit: return False
+    _rate[key].append(now); return True
 
-# ─── PASSWORD ───
-def hash_pw(pw):
-    return bcrypt.hashpw(pw.encode(), bcrypt.gensalt()).decode()
+def hash_pw(pw): return bcrypt.hashpw(pw.encode(), bcrypt.gensalt()).decode()
 
 def check_pw(pw, stored):
     try:
         if stored.startswith('$2b$') or stored.startswith('$2a$'):
             return bcrypt.checkpw(pw.encode(), stored.encode())
-        # legacy sha256 fallback
         return secrets.compare_digest(hashlib.sha256(pw.encode()).hexdigest(), stored)
-    except Exception:
-        return False
+    except: return False
 
-# ─── DB ───
 def get_db():
-    conn = sqlite3.connect(DB)
-    conn.row_factory = sqlite3.Row
-    return conn
+    conn = sqlite3.connect(DB); conn.row_factory = sqlite3.Row; return conn
 
 def init_db():
     db = get_db()
-    db.executescript('''
+    db.executescript("""
         CREATE TABLE IF NOT EXISTS organizations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            owner_id INTEGER NOT NULL,
-            name TEXT NOT NULL,
-            qb_realm_id TEXT,
-            qb_access_token TEXT,
-            qb_refresh_token TEXT,
-            qb_token_expires_at TEXT,
-            commission_currency TEXT DEFAULT 'USD',
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
+            id INTEGER PRIMARY KEY AUTOINCREMENT, owner_id INTEGER NOT NULL, name TEXT NOT NULL,
+            qb_realm_id TEXT, qb_access_token TEXT, qb_refresh_token TEXT, qb_token_expires_at TEXT,
+            commission_currency TEXT DEFAULT 'USD', created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP);
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            name TEXT,
-            plan TEXT DEFAULT 'free',
-            org_id INTEGER,
-            role TEXT DEFAULT 'agent',
-            stripe_customer_id TEXT,
-            stripe_sub_id TEXT,
-            active INTEGER DEFAULT 1,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
+            id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL,
+            name TEXT, plan TEXT DEFAULT 'free', org_id INTEGER, role TEXT DEFAULT 'agent',
+            stripe_customer_id TEXT, stripe_sub_id TEXT, active INTEGER DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
         CREATE TABLE IF NOT EXISTS bots (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            org_id INTEGER NOT NULL,
-            token TEXT UNIQUE NOT NULL,
-            name TEXT DEFAULT 'Assistant',
-            greeting TEXT DEFAULT 'Hi! How can I help you today?',
-            system_prompt TEXT DEFAULT 'You are a helpful assistant.',
-            color TEXT DEFAULT '#7c6af7',
-            avatar TEXT DEFAULT '',
-            lead_capture INTEGER DEFAULT 1,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
+            id INTEGER PRIMARY KEY AUTOINCREMENT, org_id INTEGER NOT NULL, token TEXT UNIQUE NOT NULL,
+            name TEXT DEFAULT 'Assistant', greeting TEXT DEFAULT 'Hi! How can I help you today?',
+            system_prompt TEXT DEFAULT 'You are a helpful assistant.', color TEXT DEFAULT '#7c6af7',
+            avatar TEXT DEFAULT '', lead_capture INTEGER DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
         CREATE TABLE IF NOT EXISTS conversations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            bot_id INTEGER NOT NULL,
-            session_id TEXT NOT NULL,
-            role TEXT NOT NULL,
-            message TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
+            id INTEGER PRIMARY KEY AUTOINCREMENT, bot_id INTEGER NOT NULL, session_id TEXT NOT NULL,
+            role TEXT NOT NULL, message TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
         CREATE TABLE IF NOT EXISTS leads (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            bot_id INTEGER NOT NULL,
-            name TEXT,
-            email TEXT,
-            phone TEXT,
-            notes TEXT,
-            status TEXT DEFAULT 'new',
-            assigned_to INTEGER,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
+            id INTEGER PRIMARY KEY AUTOINCREMENT, bot_id INTEGER NOT NULL, name TEXT, email TEXT,
+            phone TEXT, notes TEXT, status TEXT DEFAULT 'new', assigned_to INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
         CREATE TABLE IF NOT EXISTS deals (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            org_id INTEGER NOT NULL,
-            deal_name TEXT,
-            property_address TEXT,
-            buyer_name TEXT,
-            buyer_email TEXT,
-            seller_name TEXT,
-            seller_email TEXT,
-            purchase_price REAL,
-            earnest_money REAL,
-            closing_date TEXT,
-            commission_amount REAL,
-            deal_status TEXT DEFAULT 'lead',
-            qb_invoice_id TEXT,
-            contract_id TEXT,
-            notes TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
+            id INTEGER PRIMARY KEY AUTOINCREMENT, org_id INTEGER NOT NULL, deal_name TEXT,
+            property_address TEXT, buyer_name TEXT, buyer_email TEXT, seller_name TEXT, seller_email TEXT,
+            purchase_price REAL, earnest_money REAL, closing_date TEXT, commission_amount REAL,
+            deal_status TEXT DEFAULT 'lead', qb_invoice_id TEXT, contract_id TEXT, notes TEXT,
+            source TEXT DEFAULT 'manual', session_id TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP);
         CREATE TABLE IF NOT EXISTS deal_commissions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            deal_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            commission_amount REAL,
-            commission_status TEXT DEFAULT 'pending',
-            qb_bill_id TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
+            id INTEGER PRIMARY KEY AUTOINCREMENT, deal_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
+            commission_amount REAL, commission_status TEXT DEFAULT 'pending', qb_bill_id TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
         CREATE TABLE IF NOT EXISTS contracts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            deal_id INTEGER NOT NULL,
-            contract_type TEXT,
-            pdf_path TEXT,
-            status TEXT DEFAULT 'draft',
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
+            id INTEGER PRIMARY KEY AUTOINCREMENT, deal_id INTEGER NOT NULL, contract_type TEXT,
+            pdf_path TEXT, status TEXT DEFAULT 'draft', created_at TEXT DEFAULT CURRENT_TIMESTAMP);
         CREATE TABLE IF NOT EXISTS invitations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            org_id INTEGER NOT NULL,
-            email TEXT NOT NULL,
-            role TEXT DEFAULT 'agent',
-            token TEXT UNIQUE NOT NULL,
-            accepted INTEGER DEFAULT 0,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
+            id INTEGER PRIMARY KEY AUTOINCREMENT, org_id INTEGER NOT NULL, email TEXT NOT NULL,
+            role TEXT DEFAULT 'agent', token TEXT UNIQUE NOT NULL, accepted INTEGER DEFAULT 0, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
         CREATE TABLE IF NOT EXISTS contract_templates (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            org_id INTEGER NOT NULL,
-            name TEXT NOT NULL,
-            description TEXT,
-            file_path TEXT,
-            file_type TEXT,
-            category TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
+            id INTEGER PRIMARY KEY AUTOINCREMENT, org_id INTEGER NOT NULL, name TEXT NOT NULL,
+            description TEXT, file_path TEXT, file_type TEXT, category TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
         CREATE TABLE IF NOT EXISTS knowledge_base (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            org_id INTEGER NOT NULL,
-            content TEXT NOT NULL,
-            source TEXT,
-            source_id INTEGER,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
+            id INTEGER PRIMARY KEY AUTOINCREMENT, org_id INTEGER NOT NULL, content TEXT NOT NULL,
+            source TEXT, source_id INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
         CREATE TABLE IF NOT EXISTS generated_documents (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            org_id INTEGER NOT NULL,
-            doc_type TEXT,
-            title TEXT,
-            data_json TEXT,
-            file_path TEXT,
-            status TEXT DEFAULT 'draft',
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
+            id INTEGER PRIMARY KEY AUTOINCREMENT, org_id INTEGER NOT NULL, doc_type TEXT, title TEXT,
+            data_json TEXT, file_path TEXT, status TEXT DEFAULT 'draft', created_at TEXT DEFAULT CURRENT_TIMESTAMP);
         CREATE TABLE IF NOT EXISTS data_sources (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            bot_id INTEGER NOT NULL,
-            source_type TEXT,
-            name TEXT,
-            url TEXT,
-            instagram_handle TEXT,
-            api_key TEXT,
-            sync_status TEXT DEFAULT 'pending',
-            item_count INTEGER DEFAULT 0,
-            last_synced TEXT,
-            last_error TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-    ''')
-    # Add columns that may be missing from older schema versions
+            id INTEGER PRIMARY KEY AUTOINCREMENT, bot_id INTEGER NOT NULL, source_type TEXT, name TEXT, url TEXT,
+            instagram_handle TEXT, api_key TEXT, sync_status TEXT DEFAULT 'pending', item_count INTEGER DEFAULT 0,
+            last_synced TEXT, last_error TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+    """)
     for table, col, typedef in [
-        ('leads',        'status',      'TEXT DEFAULT "new"'),
-        ('knowledge_base','source_id',  'INTEGER'),
-        ('data_sources', 'item_count',  'INTEGER DEFAULT 0'),
-        ('data_sources', 'last_error',  'TEXT'),
-        ('users',        'stripe_customer_id', 'TEXT'),
-        ('users',        'stripe_sub_id',      'TEXT'),
-        ('deals',        'notes',       'TEXT'),
-        ('deals',        'deal_status', 'TEXT DEFAULT "lead"'),
+        ('leads','status','TEXT DEFAULT "new"'),('knowledge_base','source_id','INTEGER'),
+        ('data_sources','item_count','INTEGER DEFAULT 0'),('data_sources','last_error','TEXT'),
+        ('users','stripe_customer_id','TEXT'),('users','stripe_sub_id','TEXT'),
+        ('deals','notes','TEXT'),('deals','deal_status','TEXT DEFAULT "lead"'),
+        ('deals','source','TEXT DEFAULT "manual"'),('deals','session_id','TEXT'),
     ]:
-        try:
-            db.execute(f'ALTER TABLE {table} ADD COLUMN {col} {typedef}')
-            db.commit()
-        except Exception:
-            pass
-    db.commit()
-    db.close()
+        try: db.execute(f'ALTER TABLE {table} ADD COLUMN {col} {typedef}'); db.commit()
+        except: pass
+    db.commit(); db.close()
 
 init_db()
 
-# ─── HELPERS ───
 def make_token(user_id, email):
     exp = datetime.datetime.utcnow() + datetime.timedelta(days=30)
-    return jwt.encode({'user_id': user_id, 'email': email, 'exp': exp}, SECRET, algorithm='HS256')
+    return jwt.encode({'user_id':user_id,'email':email,'exp':exp}, SECRET, algorithm='HS256')
 
 def verify_token(req):
-    auth = req.headers.get('Authorization', '')
+    auth = req.headers.get('Authorization','')
     if not auth.startswith('Bearer '): return None
-    try:
-        data = jwt.decode(auth[7:], SECRET, algorithms=['HS256'])
-        return data['user_id']
-    except Exception:
-        return None
+    try: return jwt.decode(auth[7:], SECRET, algorithms=['HS256'])['user_id']
+    except: return None
 
-def get_user(uid, db):
-    return db.execute('SELECT * FROM users WHERE id=?', (uid,)).fetchone()
-
-def get_org_bot(org_id, db):
-    return db.execute('SELECT * FROM bots WHERE org_id=? ORDER BY id LIMIT 1', (org_id,)).fetchone()
+def get_user(uid, db): return db.execute('SELECT * FROM users WHERE id=?',(uid,)).fetchone()
+def get_org_bot(org_id, db): return db.execute('SELECT * FROM bots WHERE org_id=? ORDER BY id LIMIT 1',(org_id,)).fetchone()
 
 def send_email(to, subject, body):
-    if not SMTP_USER or not SMTP_PASS:
-        return
+    if not SMTP_USER or not SMTP_PASS: return
     try:
-        msg = MIMEText(body, 'html')
-        msg['Subject'] = subject
-        msg['From'] = SMTP_USER
-        msg['To'] = to
+        msg = MIMEText(body,'html'); msg['Subject']=subject; msg['From']=SMTP_USER; msg['To']=to
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
-            s.starttls()
-            s.login(SMTP_USER, SMTP_PASS)
-            s.sendmail(SMTP_USER, to, msg.as_string())
-    except Exception as e:
-        print(f'[email] {e}')
+            s.starttls(); s.login(SMTP_USER, SMTP_PASS); s.sendmail(SMTP_USER, to, msg.as_string())
+    except Exception as e: print(f'[email] {e}')
 
 def openai_call(messages, max_tokens=500, model='gpt-4o-mini'):
-    payload = json.dumps({
-        'model': model,
-        'messages': messages,
-        'max_tokens': max_tokens
-    }).encode()
-    req = urllib.request.Request(
-        'https://api.openai.com/v1/chat/completions',
-        data=payload,
-        headers={
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {OPENAI_KEY}'
-        }
-    )
+    payload = json.dumps({'model':model,'messages':messages,'max_tokens':max_tokens}).encode()
+    req = urllib.request.Request('https://api.openai.com/v1/chat/completions', data=payload,
+        headers={'Content-Type':'application/json','Authorization':f'Bearer {OPENAI_KEY}'})
     with urllib.request.urlopen(req, timeout=30) as r:
-        result = json.loads(r.read())
-        return result['choices'][0]['message']['content']
+        return json.loads(r.read())['choices'][0]['message']['content']
 
 def monthly_msg_count(bot_id, db):
-    start = datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
-    row = db.execute(
-        "SELECT COUNT(*) FROM conversations WHERE bot_id=? AND role='user' AND created_at>=?",
-        (bot_id, start)
-    ).fetchone()
-    return row[0]
+    start = datetime.datetime.now().replace(day=1,hour=0,minute=0,second=0,microsecond=0).isoformat()
+    return db.execute("SELECT COUNT(*) FROM conversations WHERE bot_id=? AND role='user' AND created_at>=?",(bot_id,start)).fetchone()[0]
 
-# ─── WEB SCRAPER (Playwright — handles JS-rendered sites) ───
+# ── DEEP SCRAPER ──────────────────────────────────────────────────────────────
 class _Extractor(HTMLParser):
-    """Fallback plain HTML extractor used if Playwright is unavailable."""
     SKIP = {'script','style','noscript','nav','footer','head','iframe','svg'}
-    def __init__(self):
-        super().__init__()
-        self._depth = 0
-        self.parts = []
+    def __init__(self): super().__init__(); self._depth=0; self.parts=[]; self._links=[]
     def handle_starttag(self, tag, attrs):
         if tag in self.SKIP: self._depth += 1
+        if tag == 'a':
+            for k,v in attrs:
+                if k=='href' and v: self._links.append(v)
     def handle_endtag(self, tag):
         if tag in self.SKIP and self._depth > 0: self._depth -= 1
     def handle_data(self, data):
@@ -320,1454 +174,922 @@ class _Extractor(HTMLParser):
             s = ' '.join(data.split())
             if len(s) > 20: self.parts.append(s)
 
+def _normalize_url(href, base):
+    if href.startswith('http'): return href
+    if href.startswith('//'): return base.split('://')[0]+':'+href
+    if href.startswith('/'): return '/'.join(base.split('/')[:3])+href
+    return None
 
-def _chunk_text(text, max_total=15000, chunk_size=800):
+def _same_origin(url, base):
+    try: return base.split('/')[2]==url.split('/')[2]
+    except: return False
+
+def _chunk_text(text, max_total=20000, chunk_size=800):
     chunks = []
-    for i in range(0, min(len(text), max_total), chunk_size):
-        chunk = text[i:i+chunk_size].strip()
-        if chunk:
-            chunks.append(chunk)
+    for i in range(0, min(len(text),max_total), chunk_size):
+        c = text[i:i+chunk_size].strip()
+        if c: chunks.append(c)
     return chunks
 
-
-def scrape_url(url):
-    """
-    Scrape a URL using Playwright (headless Chromium) so JS-rendered content
-    is captured. Falls back to urllib + HTMLParser if Playwright is not installed.
-    """
-    # ── Playwright path ──────────────────────────────────────────────────
+def scrape_url(url, deep=True, max_pages=12):
+    visited=set(); parts=[]
+    def get_links(html, base):
+        p = _Extractor(); p.feed(html); out=[]
+        for href in p._links:
+            full = _normalize_url(href,base)
+            if full and _same_origin(full,base):
+                clean = full.split('#')[0].split('?')[0].rstrip('/')
+                if clean and clean not in visited: out.append(clean)
+        return out
     try:
         from playwright.sync_api import sync_playwright
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page(
-                user_agent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
-                           '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            )
-            page.goto(url, wait_until='networkidle', timeout=20000)
-            # Give any lazy-loaded content a moment
-            page.wait_for_timeout(1500)
-            text = page.inner_text('body')
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=True)
+            page = browser.new_page(user_agent='Mozilla/5.0 Peekbot/2.0')
+            queue = [url.rstrip('/')]
+            while queue and len(visited) < max_pages:
+                cur = queue.pop(0)
+                if cur in visited: continue
+                visited.add(cur); print(f'[scraper] {cur}')
+                try:
+                    page.goto(cur, wait_until='networkidle', timeout=20000)
+                    page.wait_for_timeout(1200)
+                    text = page.inner_text('body'); html = page.content()
+                    if text: parts.append(f'=== {cur} ===\n'+re.sub(r'\n{3,}','\n\n',text).strip())
+                    if deep and html:
+                        for lnk in get_links(html,url):
+                            if lnk not in visited: queue.append(lnk)
+                except Exception as e: print(f'[scraper] {cur}: {e}')
             browser.close()
-        # Collapse excessive whitespace
-        text = re.sub(r'\n{3,}', '\n\n', text).strip()
-        return _chunk_text(text), None
-    except ImportError:
-        pass  # Playwright not installed — fall through to urllib
-    except Exception as e:
-        return [], f'Playwright error: {e}'
-
-    # ── urllib fallback ──────────────────────────────────────────────────
+        return _chunk_text('\n\n'.join(parts)), None
+    except ImportError: pass
+    except Exception as e: return [], f'Playwright error: {e}'
     try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 Peekbot/1.0'})
-        with urllib.request.urlopen(req, timeout=15) as r:
-            raw = r.read(500_000).decode('utf-8', errors='ignore')
-        p = _Extractor()
-        p.feed(raw)
-        full = '\n'.join(p.parts)
-        return _chunk_text(full), None
-    except Exception as e:
-        return [], str(e)
-
-
-# ─── SYNC HELPERS (shared between manual sync route and auto-sync) ───
+        queue=[url.rstrip('/')]
+        while queue and len(visited)<max_pages:
+            cur=queue.pop(0)
+            if cur in visited: continue
+            visited.add(cur)
+            try:
+                req=urllib.request.Request(cur,headers={'User-Agent':'Mozilla/5.0 Peekbot/1.0'})
+                with urllib.request.urlopen(req,timeout=12) as r: raw=r.read(500_000).decode('utf-8',errors='ignore')
+                p=_Extractor(); p.feed(raw)
+                parts.append(f'=== {cur} ===\n'+'\n'.join(p.parts))
+                if deep:
+                    for href in p._links:
+                        full=_normalize_url(href,url)
+                        if full and _same_origin(full,url):
+                            clean=full.split('#')[0].split('?')[0].rstrip('/')
+                            if clean not in visited: queue.append(clean)
+            except: continue
+        return _chunk_text('\n\n'.join(parts)), None
+    except Exception as e: return [], str(e)
 
 def _do_sync(src, org_id, db):
-    """
-    Perform the actual scrape + knowledge_base write for one data_source row.
-    `src` must be a sqlite3.Row. `db` must be an open connection.
-    Returns (chunk_count, error_string_or_None).
-    """
-    sid = src['id']
-    db.execute("UPDATE data_sources SET sync_status='syncing' WHERE id=?", (sid,))
-    db.commit()
-
-    chunks, err = [], None
-    if src['source_type'] in ('website', 'mls') and src['url']:
-        chunks, err = scrape_url(src['url'])
-    elif src['source_type'] == 'instagram':
-        err = 'Instagram scraping requires authentication; use website URL instead.'
-    else:
-        err = 'No URL configured'
-
+    sid=src['id']
+    db.execute("UPDATE data_sources SET sync_status='syncing' WHERE id=?",(sid,)); db.commit()
+    chunks,err=[],None
+    if src['source_type'] in ('website','mls') and src['url']:
+        chunks,err=scrape_url(src['url'],deep=True)
+    elif src['source_type']=='instagram': err='Instagram not supported; use website URL.'
+    else: err='No URL configured'
     if chunks:
-        db.execute('DELETE FROM knowledge_base WHERE source_id=? AND org_id=?', (sid, org_id))
+        db.execute('DELETE FROM knowledge_base WHERE source_id=? AND org_id=?',(sid,org_id))
         for chunk in chunks:
-            db.execute(
-                'INSERT INTO knowledge_base (org_id, content, source, source_id) VALUES (?,?,?,?)',
-                (org_id, chunk, src['name'], sid)
-            )
-        db.execute(
-            '''UPDATE data_sources SET sync_status='synced', last_synced=CURRENT_TIMESTAMP,
-               item_count=?, last_error=NULL WHERE id=?''',
-            (len(chunks), sid)
-        )
-    elif err:
-        db.execute(
-            "UPDATE data_sources SET sync_status='error', last_error=? WHERE id=?",
-            (err[:500], sid)
-        )
-    else:
-        # Scraped OK but got nothing — mark synced with 0 items
-        db.execute(
-            "UPDATE data_sources SET sync_status='synced', last_synced=CURRENT_TIMESTAMP, item_count=0 WHERE id=?",
-            (sid,)
-        )
-
-    db.commit()
-    return len(chunks), err
-
-
-# ─── AUTO-SYNC BACKGROUND THREAD ────────────────────────────────────────────
+            db.execute('INSERT INTO knowledge_base (org_id,content,source,source_id) VALUES (?,?,?,?)',(org_id,chunk,src['name'],sid))
+        db.execute("UPDATE data_sources SET sync_status='synced',last_synced=CURRENT_TIMESTAMP,item_count=?,last_error=NULL WHERE id=?",(len(chunks),sid))
+    elif err: db.execute("UPDATE data_sources SET sync_status='error',last_error=? WHERE id=?",(err[:500],sid))
+    else: db.execute("UPDATE data_sources SET sync_status='synced',last_synced=CURRENT_TIMESTAMP,item_count=0 WHERE id=?",(sid,))
+    db.commit(); return len(chunks), err
 
 def _auto_sync_loop():
-    """
-    Runs forever in a daemon thread.
-    Every AUTO_SYNC_INTERVAL seconds it re-syncs every website/mls data source.
-    """
-    print(f'[auto-sync] Started — interval {AUTO_SYNC_INTERVAL}s')
+    print(f'[auto-sync] started interval={AUTO_SYNC_INTERVAL}s')
     while True:
-        time.sleep(AUTO_SYNC_INTERVAL)
-        print('[auto-sync] Running scheduled sync for all sources…')
+        time.sleep(AUTO_SYNC_INTERVAL); print('[auto-sync] running...')
         try:
-            db = get_db()
-            sources = db.execute(
-                "SELECT ds.*, b.org_id FROM data_sources ds "
-                "JOIN bots b ON ds.bot_id = b.id "
-                "WHERE ds.source_type IN ('website','mls') AND ds.url IS NOT NULL"
-            ).fetchall()
+            db=get_db()
+            sources=db.execute("SELECT ds.*,b.org_id FROM data_sources ds JOIN bots b ON ds.bot_id=b.id WHERE ds.source_type IN ('website','mls') AND ds.url IS NOT NULL").fetchall()
             db.close()
-
             for src in sources:
                 try:
-                    db = get_db()
-                    count, err = _do_sync(src, src['org_id'], db)
-                    db.close()
-                    if err:
-                        print(f'[auto-sync] source {src["id"]} ({src["name"]}): error — {err}')
-                    else:
-                        print(f'[auto-sync] source {src["id"]} ({src["name"]}): {count} chunks')
-                except Exception as e:
-                    print(f'[auto-sync] source {src["id"]} exception: {e}')
-        except Exception as e:
-            print(f'[auto-sync] outer exception: {e}')
+                    db=get_db(); count,err=_do_sync(src,src['org_id'],db); db.close()
+                    print(f'[auto-sync] {src["name"]}: {count} chunks' if not err else f'[auto-sync] {src["name"]}: {err}')
+                except Exception as e: print(f'[auto-sync] {e}')
+        except Exception as e: print(f'[auto-sync] outer: {e}')
 
+threading.Thread(target=_auto_sync_loop,daemon=True,name='auto-sync').start()
 
-_sync_thread = threading.Thread(target=_auto_sync_loop, daemon=True, name='auto-sync')
-_sync_thread.start()
-
-
-# ─── STRIPE HELPERS ───
 def stripe_post(path, params):
-    data = urllib.parse.urlencode(params).encode()
-    auth = base64.b64encode(f'{STRIPE_SECRET}:'.encode()).decode()
-    req = urllib.request.Request(
-        f'https://api.stripe.com/v1/{path}',
-        data=data,
-        headers={
-            'Authorization': f'Basic {auth}',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
-    )
-    with urllib.request.urlopen(req, timeout=15) as r:
-        return json.loads(r.read())
+    data=urllib.parse.urlencode(params).encode()
+    auth=base64.b64encode(f'{STRIPE_SECRET}:'.encode()).decode()
+    req=urllib.request.Request(f'https://api.stripe.com/v1/{path}',data=data,
+        headers={'Authorization':f'Basic {auth}','Content-Type':'application/x-www-form-urlencoded'})
+    with urllib.request.urlopen(req,timeout=15) as r: return json.loads(r.read())
 
 def verify_stripe_sig(payload_bytes, sig_header):
     try:
-        ts   = [p.split('=')[1] for p in sig_header.split(',') if p.startswith('t=')][0]
-        sigs = [p.split('=',1)[1] for p in sig_header.split(',') if p.startswith('v1=')]
-        signed = f'{ts}.'.encode() + payload_bytes
-        expected = _hmac.new(STRIPE_WEBHOOK.encode(), signed, hashlib.sha256).hexdigest()
-        return any(secrets.compare_digest(expected, s) for s in sigs)
-    except Exception:
-        return False
+        ts=[p.split('=')[1] for p in sig_header.split(',') if p.startswith('t=')][0]
+        sigs=[p.split('=',1)[1] for p in sig_header.split(',') if p.startswith('v1=')]
+        expected=_hmac.new(STRIPE_WEBHOOK.encode(),f'{ts}.'.encode()+payload_bytes,hashlib.sha256).hexdigest()
+        return any(secrets.compare_digest(expected,s) for s in sigs)
+    except: return False
 
-# ─── STATIC ROUTES ───
-@app.route('/')
-def index():
-    return send_from_directory('static', 'index.html')
-
+@app.route('/') 
+def index(): return send_from_directory('static','index.html')
 @app.route('/dashboard')
 @app.route('/accept-invite')
-def spa():
-    return send_from_directory('static', 'index.html')
-
+def spa(): return send_from_directory('static','index.html')
 @app.route('/static/<path:path>')
-def static_files(path):
-    return send_from_directory('static', path)
-
+def static_files(path): return send_from_directory('static',path)
 @app.route('/health')
-def health():
-    return jsonify({'status': 'ok', 'ts': datetime.datetime.utcnow().isoformat()})
+def health(): return jsonify({'status':'ok','ts':datetime.datetime.utcnow().isoformat()})
 
-# ─── AUTH ───
 @app.route('/api/register', methods=['POST'])
 def register():
-    d = request.json or {}
-    email    = (d.get('email') or '').lower().strip()
-    password = d.get('password', '')
-    name     = d.get('name', '').strip()
-    if not email or not password:
-        return jsonify({'error': 'Email and password required'}), 400
-    db = get_db()
+    d=request.json or {}
+    email=(d.get('email') or '').lower().strip(); password=d.get('password',''); name=d.get('name','').strip()
+    if not email or not password: return jsonify({'error':'Email and password required'}),400
+    db=get_db()
     try:
-        db.execute('INSERT INTO users (email, password, name, plan) VALUES (?, ?, ?, ?)',
-            (email, hash_pw(password), name, 'free'))
-        db.commit()
-        user = db.execute('SELECT * FROM users WHERE email=?', (email,)).fetchone()
-        db.execute('INSERT INTO organizations (owner_id, name) VALUES (?, ?)',
-            (user['id'], (name or email.split('@')[0]) + ' Organization'))
-        db.commit()
-        org = db.execute('SELECT * FROM organizations WHERE owner_id=?', (user['id'],)).fetchone()
-        db.execute('UPDATE users SET org_id=?, role=? WHERE id=?', (org['id'], 'owner', user['id']))
-        bot_token = secrets.token_hex(16)
-        db.execute('INSERT INTO bots (org_id, token, name) VALUES (?, ?, ?)',
-            (org['id'], bot_token, (name or 'My') + "'s Bot"))
-        db.commit()
-        db.close()
-        return jsonify({
-            'token': make_token(user['id'], email),
-            'email': email,
-            'name': name,
-            'plan': 'free',
-            'role': 'owner'
-        })
-    except Exception:
-        db.close()
-        return jsonify({'error': 'Email already registered'}), 400
+        db.execute('INSERT INTO users (email,password,name,plan) VALUES (?,?,?,?)',(email,hash_pw(password),name,'free')); db.commit()
+        user=db.execute('SELECT * FROM users WHERE email=?',(email,)).fetchone()
+        db.execute('INSERT INTO organizations (owner_id,name) VALUES (?,?)',(user['id'],(name or email.split('@')[0])+' Organization')); db.commit()
+        org=db.execute('SELECT * FROM organizations WHERE owner_id=?',(user['id'],)).fetchone()
+        db.execute('UPDATE users SET org_id=?,role=? WHERE id=?',(org['id'],'owner',user['id']))
+        tok=secrets.token_hex(16)
+        db.execute('INSERT INTO bots (org_id,token,name) VALUES (?,?,?)',(org['id'],tok,(name or 'My')+"'s Bot")); db.commit(); db.close()
+        return jsonify({'token':make_token(user['id'],email),'email':email,'name':name,'plan':'free','role':'owner'})
+    except: db.close(); return jsonify({'error':'Email already registered'}),400
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    d = request.json or {}
-    email = (d.get('email') or '').lower().strip()
-    pw    = d.get('password', '')
-    db = get_db()
-    user = db.execute('SELECT * FROM users WHERE email=?', (email,)).fetchone()
-    if not user or not check_pw(pw, user['password']):
-        db.close()
-        return jsonify({'error': 'Invalid credentials'}), 401
-    # Upgrade legacy sha256 password to bcrypt on login
+    d=request.json or {}; email=(d.get('email') or '').lower().strip(); pw=d.get('password','')
+    db=get_db(); user=db.execute('SELECT * FROM users WHERE email=?',(email,)).fetchone()
+    if not user or not check_pw(pw,user['password']): db.close(); return jsonify({'error':'Invalid credentials'}),401
     if not (user['password'].startswith('$2b$') or user['password'].startswith('$2a$')):
-        db.execute('UPDATE users SET password=? WHERE id=?', (hash_pw(pw), user['id']))
-        db.commit()
+        db.execute('UPDATE users SET password=? WHERE id=?',(hash_pw(pw),user['id'])); db.commit()
     db.close()
-    return jsonify({
-        'token': make_token(user['id'], user['email']),
-        'email': user['email'],
-        'name':  user['name'] or '',
-        'plan':  user['plan'] or 'free',
-        'role':  user['role'] or 'agent',
-        'org_id': user['org_id']
-    })
+    return jsonify({'token':make_token(user['id'],user['email']),'email':user['email'],'name':user['name'] or '',
+                    'plan':user['plan'] or 'free','role':user['role'] or 'agent','org_id':user['org_id']})
 
 @app.route('/api/me', methods=['GET'])
 def me():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    if not user:
-        db.close()
-        return jsonify({'error': 'Not found'}), 404
-    org  = db.execute('SELECT * FROM organizations WHERE id=?', (user['org_id'],)).fetchone()
-    bot  = get_org_bot(user['org_id'], db) if user['org_id'] else None
-    db.close()
-    return jsonify({
-        'id':      user['id'],
-        'email':   user['email'],
-        'name':    user['name'] or '',
-        'plan':    user['plan'] or 'free',
-        'role':    user['role'] or 'agent',
-        'org_id':  user['org_id'],
-        'org_name': org['name'] if org else '',
-        'bot_token': bot['token'] if bot else '',
-    })
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    if not user: db.close(); return jsonify({'error':'Not found'}),404
+    org=db.execute('SELECT * FROM organizations WHERE id=?',(user['org_id'],)).fetchone()
+    bot=get_org_bot(user['org_id'],db) if user['org_id'] else None; db.close()
+    return jsonify({'id':user['id'],'email':user['email'],'name':user['name'] or '','plan':user['plan'] or 'free',
+                    'role':user['role'] or 'agent','org_id':user['org_id'],'org_name':org['name'] if org else '','bot_token':bot['token'] if bot else ''})
 
-# ─── BOT ───
 @app.route('/api/bot', methods=['GET'])
 def get_bot():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    bot  = get_org_bot(user['org_id'], db)
-    db.close()
-    if not bot: return jsonify({'error': 'No bot found'}), 404
-    return jsonify({**dict(bot), 'role': user['role']})
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db); bot=get_org_bot(user['org_id'],db); db.close()
+    if not bot: return jsonify({'error':'No bot found'}),404
+    return jsonify({**dict(bot),'role':user['role']})
 
 @app.route('/api/bot', methods=['PUT'])
 def update_bot():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    d = request.json or {}
-    db = get_db()
-    user = get_user(uid, db)
-    bot  = get_org_bot(user['org_id'], db)
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    d=request.json or {}; db=get_db(); user=get_user(uid,db); bot=get_org_bot(user['org_id'],db)
     if not bot:
-        tok = secrets.token_hex(16)
-        db.execute('INSERT INTO bots (org_id, token, name, greeting, system_prompt, color, lead_capture) VALUES (?,?,?,?,?,?,?)',
-            (user['org_id'], tok, d.get('name','My Bot'), d.get('greeting','Hi!'),
-             d.get('system_prompt',''), d.get('color','#7c6af7'), d.get('lead_capture',1)))
+        tok=secrets.token_hex(16)
+        db.execute('INSERT INTO bots (org_id,token,name,greeting,system_prompt,color,lead_capture) VALUES (?,?,?,?,?,?,?)',
+            (user['org_id'],tok,d.get('name','My Bot'),d.get('greeting','Hi!'),d.get('system_prompt',''),d.get('color','#7c6af7'),d.get('lead_capture',1)))
     else:
-        db.execute('UPDATE bots SET name=?, greeting=?, system_prompt=?, color=?, lead_capture=? WHERE org_id=?',
-            (d.get('name'), d.get('greeting'), d.get('system_prompt'),
-             d.get('color','#7c6af7'), d.get('lead_capture',1), user['org_id']))
-    db.commit()
-    bot = get_org_bot(user['org_id'], db)
-    db.close()
-    return jsonify(dict(bot))
+        db.execute('UPDATE bots SET name=?,greeting=?,system_prompt=?,color=?,lead_capture=? WHERE org_id=?',
+            (d.get('name'),d.get('greeting'),d.get('system_prompt'),d.get('color','#7c6af7'),d.get('lead_capture',1),user['org_id']))
+    db.commit(); bot=get_org_bot(user['org_id'],db); db.close(); return jsonify(dict(bot))
 
 @app.route('/api/bots', methods=['GET'])
 def get_bots():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    bots = db.execute('SELECT * FROM bots WHERE org_id=? ORDER BY id', (user['org_id'],)).fetchall()
-    db.close()
-    return jsonify({'bots': [dict(b) for b in bots], 'role': user['role']})
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    bots=db.execute('SELECT * FROM bots WHERE org_id=? ORDER BY id',(user['org_id'],)).fetchall()
+    db.close(); return jsonify({'bots':[dict(b) for b in bots],'role':user['role']})
 
-# ─── DATA SOURCES ───
-def _get_bot_for_user(uid, db):
-    user = get_user(uid, db)
-    return get_org_bot(user['org_id'], db), user
+def _get_bot_for_user(uid,db): user=get_user(uid,db); return get_org_bot(user['org_id'],db),user
 
 @app.route('/api/data-sources', methods=['GET'])
 def get_data_sources():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    bot, _ = _get_bot_for_user(uid, db)
-    if not bot:
-        db.close()
-        return jsonify([])
-    sources = db.execute('SELECT * FROM data_sources WHERE bot_id=? ORDER BY created_at DESC', (bot['id'],)).fetchall()
-    db.close()
-    return jsonify([dict(s) for s in sources])
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); bot,_=_get_bot_for_user(uid,db)
+    if not bot: db.close(); return jsonify([])
+    sources=db.execute('SELECT * FROM data_sources WHERE bot_id=? ORDER BY created_at DESC',(bot['id'],)).fetchall()
+    db.close(); return jsonify([dict(s) for s in sources])
 
 @app.route('/api/data-sources', methods=['POST'])
 def add_data_source():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    bot, _ = _get_bot_for_user(uid, db)
-    if not bot:
-        db.close()
-        return jsonify({'error': 'No bot found'}), 404
-    d = request.json or {}
-    if not d.get('source_type') or not d.get('name'):
-        db.close()
-        return jsonify({'error': 'source_type and name required'}), 400
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); bot,_=_get_bot_for_user(uid,db)
+    if not bot: db.close(); return jsonify({'error':'No bot found'}),404
+    d=request.json or {}
+    if not d.get('source_type') or not d.get('name'): db.close(); return jsonify({'error':'source_type and name required'}),400
     try:
-        db.execute('''INSERT INTO data_sources (bot_id, source_type, name, url, instagram_handle, api_key, sync_status)
-                      VALUES (?, ?, ?, ?, ?, ?, 'pending')''',
-            (bot['id'], d['source_type'], d['name'], d.get('url'),
-             d.get('instagram_handle'), d.get('api_key')))
-        db.commit()
-        sid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
-        src = db.execute('SELECT * FROM data_sources WHERE id=?', (sid,)).fetchone()
-        db.close()
-        return jsonify(dict(src)), 201
-    except Exception as e:
-        db.close()
-        return jsonify({'error': str(e)}), 400
+        db.execute("INSERT INTO data_sources (bot_id,source_type,name,url,instagram_handle,api_key,sync_status) VALUES (?,?,?,?,?,?,'pending')",
+            (bot['id'],d['source_type'],d['name'],d.get('url'),d.get('instagram_handle'),d.get('api_key'))); db.commit()
+        sid=db.execute('SELECT last_insert_rowid()').fetchone()[0]
+        src=db.execute('SELECT * FROM data_sources WHERE id=?',(sid,)).fetchone(); db.close()
+        return jsonify(dict(src)),201
+    except Exception as e: db.close(); return jsonify({'error':str(e)}),400
 
 @app.route('/api/data-sources/<int:sid>', methods=['DELETE'])
 def delete_data_source(sid):
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    bot, user = _get_bot_for_user(uid, db)
-    if not bot:
-        db.close()
-        return jsonify({'error': 'Not found'}), 404
-    src = db.execute('SELECT * FROM data_sources WHERE id=? AND bot_id=?', (sid, bot['id'])).fetchone()
-    if not src:
-        db.close()
-        return jsonify({'error': 'Not found'}), 404
-    db.execute('DELETE FROM knowledge_base WHERE source_id=? AND org_id=?', (sid, user['org_id']))
-    db.execute('DELETE FROM data_sources WHERE id=?', (sid,))
-    db.commit()
-    db.close()
-    return jsonify({'success': True})
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); bot,user=_get_bot_for_user(uid,db)
+    if not bot: db.close(); return jsonify({'error':'Not found'}),404
+    src=db.execute('SELECT * FROM data_sources WHERE id=? AND bot_id=?',(sid,bot['id'])).fetchone()
+    if not src: db.close(); return jsonify({'error':'Not found'}),404
+    db.execute('DELETE FROM knowledge_base WHERE source_id=? AND org_id=?',(sid,user['org_id']))
+    db.execute('DELETE FROM data_sources WHERE id=?',(sid,)); db.commit(); db.close()
+    return jsonify({'success':True})
 
 @app.route('/api/data-sources/<int:sid>/sync', methods=['POST'])
 def sync_data_source(sid):
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    bot, user = _get_bot_for_user(uid, db)
-    if not bot:
-        db.close()
-        return jsonify({'error': 'Not found'}), 404
-    src = db.execute('SELECT * FROM data_sources WHERE id=? AND bot_id=?', (sid, bot['id'])).fetchone()
-    if not src:
-        db.close()
-        return jsonify({'error': 'Not found'}), 404
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); bot,user=_get_bot_for_user(uid,db)
+    if not bot: db.close(); return jsonify({'error':'Not found'}),404
+    src=db.execute('SELECT * FROM data_sources WHERE id=? AND bot_id=?',(sid,bot['id'])).fetchone()
+    if not src: db.close(); return jsonify({'error':'Not found'}),404
+    count,err=_do_sync(src,user['org_id'],db); db.close()
+    return jsonify({'success':True,'chunks':count,'error':err})
 
-    count, err = _do_sync(src, user['org_id'], db)
-    db.close()
-    return jsonify({'success': True, 'chunks': count, 'error': err})
-
-# ─── KNOWLEDGE BASE ───
 @app.route('/api/knowledge', methods=['GET'])
 def get_knowledge():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    kb = db.execute('SELECT * FROM knowledge_base WHERE org_id=? ORDER BY created_at DESC', (user['org_id'],)).fetchall()
-    db.close()
-    return jsonify([dict(k) for k in kb])
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    kb=db.execute('SELECT * FROM knowledge_base WHERE org_id=? ORDER BY created_at DESC',(user['org_id'],)).fetchall()
+    db.close(); return jsonify([dict(k) for k in kb])
 
 @app.route('/api/knowledge', methods=['POST'])
 def add_knowledge():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    d = request.json or {}
-    if not d.get('content'):
-        return jsonify({'error': 'content required'}), 400
-    db = get_db()
-    user = get_user(uid, db)
-    db.execute('INSERT INTO knowledge_base (org_id, content, source) VALUES (?, ?, ?)',
-        (user['org_id'], d['content'][:2000], d.get('source', 'manual')))
-    db.commit()
-    kb = db.execute('SELECT * FROM knowledge_base WHERE org_id=? ORDER BY id DESC LIMIT 1', (user['org_id'],)).fetchone()
-    db.close()
-    return jsonify(dict(kb)), 201
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    d=request.json or {}
+    if not d.get('content'): return jsonify({'error':'content required'}),400
+    db=get_db(); user=get_user(uid,db)
+    db.execute('INSERT INTO knowledge_base (org_id,content,source) VALUES (?,?,?)',(user['org_id'],d['content'][:2000],d.get('source','manual'))); db.commit()
+    kb=db.execute('SELECT * FROM knowledge_base WHERE org_id=? ORDER BY id DESC LIMIT 1',(user['org_id'],)).fetchone()
+    db.close(); return jsonify(dict(kb)),201
 
 @app.route('/api/knowledge/<int:kb_id>', methods=['DELETE'])
 def delete_knowledge(kb_id):
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    kb = db.execute('SELECT * FROM knowledge_base WHERE id=? AND org_id=?', (kb_id, user['org_id'])).fetchone()
-    if not kb:
-        db.close()
-        return jsonify({'error': 'Not found'}), 404
-    db.execute('DELETE FROM knowledge_base WHERE id=?', (kb_id,))
-    db.commit()
-    db.close()
-    return jsonify({'success': True})
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    kb=db.execute('SELECT * FROM knowledge_base WHERE id=? AND org_id=?',(kb_id,user['org_id'])).fetchone()
+    if not kb: db.close(); return jsonify({'error':'Not found'}),404
+    db.execute('DELETE FROM knowledge_base WHERE id=?',(kb_id,)); db.commit(); db.close()
+    return jsonify({'success':True})
 
-# ─── LEADS ───
 @app.route('/api/leads', methods=['GET'])
 def get_leads():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    bots = db.execute('SELECT id FROM bots WHERE org_id=?', (user['org_id'],)).fetchall()
-    if not bots:
-        db.close()
-        return jsonify([])
-    ids = [b['id'] for b in bots]
-    ph  = ','.join('?' * len(ids))
-    leads = db.execute(f'SELECT * FROM leads WHERE bot_id IN ({ph}) ORDER BY created_at DESC', ids).fetchall()
-    db.close()
-    return jsonify([dict(l) for l in leads])
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    bots=db.execute('SELECT id FROM bots WHERE org_id=?',(user['org_id'],)).fetchall()
+    if not bots: db.close(); return jsonify([])
+    ids=[b['id'] for b in bots]; ph=','.join('?'*len(ids))
+    leads=db.execute(f'SELECT * FROM leads WHERE bot_id IN ({ph}) ORDER BY created_at DESC',ids).fetchall()
+    db.close(); return jsonify([dict(l) for l in leads])
 
 @app.route('/api/leads/<int:lead_id>', methods=['PATCH'])
 def update_lead(lead_id):
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    d = request.json or {}
-    db = get_db()
-    user = get_user(uid, db)
-    bots = db.execute('SELECT id FROM bots WHERE org_id=?', (user['org_id'],)).fetchall()
-    ids  = [b['id'] for b in bots]
-    ph   = ','.join('?' * len(ids))
-    lead = db.execute(f'SELECT * FROM leads WHERE id=? AND bot_id IN ({ph})', [lead_id]+ids).fetchone()
-    if not lead:
-        db.close()
-        return jsonify({'error': 'Not found'}), 404
-    fields = {}
-    for key in ('status', 'notes', 'assigned_to', 'name', 'email', 'phone'):
-        if key in d:
-            fields[key] = d[key]
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    d=request.json or {}; db=get_db(); user=get_user(uid,db)
+    bots=db.execute('SELECT id FROM bots WHERE org_id=?',(user['org_id'],)).fetchall()
+    ids=[b['id'] for b in bots]; ph=','.join('?'*len(ids))
+    lead=db.execute(f'SELECT * FROM leads WHERE id=? AND bot_id IN ({ph})',[lead_id]+ids).fetchone()
+    if not lead: db.close(); return jsonify({'error':'Not found'}),404
+    fields={k:d[k] for k in ('status','notes','assigned_to','name','email','phone') if k in d}
     if fields:
-        sets = ', '.join(f'{k}=?' for k in fields)
-        db.execute(f'UPDATE leads SET {sets} WHERE id=?', list(fields.values()) + [lead_id])
-        db.commit()
-    lead = db.execute('SELECT * FROM leads WHERE id=?', (lead_id,)).fetchone()
-    db.close()
+        db.execute(f'UPDATE leads SET {", ".join(f"{k}=?" for k in fields)} WHERE id=?',list(fields.values())+[lead_id]); db.commit()
+    lead=db.execute('SELECT * FROM leads WHERE id=?',(lead_id,)).fetchone(); db.close()
     return jsonify(dict(lead))
 
 @app.route('/api/leads/export', methods=['GET'])
 def export_leads():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    bots = db.execute('SELECT id FROM bots WHERE org_id=?', (user['org_id'],)).fetchall()
-    if not bots:
-        db.close()
-        return Response('', mimetype='text/csv')
-    ids = [b['id'] for b in bots]
-    ph  = ','.join('?' * len(ids))
-    leads = db.execute(f'SELECT * FROM leads WHERE bot_id IN ({ph}) ORDER BY created_at DESC', ids).fetchall()
-    db.close()
-    out = io.StringIO()
-    w = csv.writer(out)
-    w.writerow(['id','name','email','phone','status','notes','created_at'])
-    for l in leads:
-        w.writerow([l['id'], l['name'], l['email'], l['phone'], l['status'], l['notes'], l['created_at']])
-    resp = make_response(out.getvalue())
-    resp.headers['Content-Type'] = 'text/csv'
-    resp.headers['Content-Disposition'] = 'attachment; filename=leads.csv'
-    return resp
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    bots=db.execute('SELECT id FROM bots WHERE org_id=?',(user['org_id'],)).fetchall()
+    if not bots: db.close(); return Response('',mimetype='text/csv')
+    ids=[b['id'] for b in bots]; ph=','.join('?'*len(ids))
+    leads=db.execute(f'SELECT * FROM leads WHERE bot_id IN ({ph}) ORDER BY created_at DESC',ids).fetchall(); db.close()
+    out=io.StringIO(); w=csv.writer(out); w.writerow(['id','name','email','phone','status','notes','created_at'])
+    for l in leads: w.writerow([l['id'],l['name'],l['email'],l['phone'],l['status'],l['notes'],l['created_at']])
+    resp=make_response(out.getvalue()); resp.headers['Content-Type']='text/csv'
+    resp.headers['Content-Disposition']='attachment; filename=leads.csv'; return resp
 
-# ─── CONVERSATIONS ───
 @app.route('/api/conversations', methods=['GET'])
 def get_conversations():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    bots = db.execute('SELECT id FROM bots WHERE org_id=?', (user['org_id'],)).fetchall()
-    if not bots:
-        db.close()
-        return jsonify([])
-    ids = [b['id'] for b in bots]
-    ph  = ','.join('?' * len(ids))
-    convos = db.execute(f'''SELECT session_id, MIN(created_at) as started, COUNT(*) as messages
-                            FROM conversations WHERE bot_id IN ({ph})
-                            GROUP BY session_id ORDER BY started DESC LIMIT 100''', ids).fetchall()
-    db.close()
-    return jsonify([dict(c) for c in convos])
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    bots=db.execute('SELECT id FROM bots WHERE org_id=?',(user['org_id'],)).fetchall()
+    if not bots: db.close(); return jsonify([])
+    ids=[b['id'] for b in bots]; ph=','.join('?'*len(ids))
+    convos=db.execute(f'SELECT session_id,MIN(created_at) as started,COUNT(*) as messages FROM conversations WHERE bot_id IN ({ph}) GROUP BY session_id ORDER BY started DESC LIMIT 100',ids).fetchall()
+    db.close(); return jsonify([dict(c) for c in convos])
 
 @app.route('/api/conversations/<session_id>', methods=['GET'])
 def get_conversation(session_id):
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    msgs = db.execute('''SELECT c.* FROM conversations c
-                         JOIN bots b ON c.bot_id=b.id
-                         WHERE b.org_id=? AND c.session_id=? ORDER BY c.created_at''',
-        (user['org_id'], session_id)).fetchall()
-    db.close()
-    return jsonify([dict(m) for m in msgs])
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    msgs=db.execute('SELECT c.* FROM conversations c JOIN bots b ON c.bot_id=b.id WHERE b.org_id=? AND c.session_id=? ORDER BY c.created_at',(user['org_id'],session_id)).fetchall()
+    db.close(); return jsonify([dict(m) for m in msgs])
 
-# ─── DEALS ───
 @app.route('/api/deals', methods=['GET'])
 def get_deals():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    deals = db.execute('SELECT * FROM deals WHERE org_id=? ORDER BY created_at DESC', (user['org_id'],)).fetchall()
-    db.close()
-    return jsonify([dict(d) for d in deals])
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    deals=db.execute('SELECT * FROM deals WHERE org_id=? ORDER BY created_at DESC',(user['org_id'],)).fetchall()
+    db.close(); return jsonify([dict(d) for d in deals])
 
 @app.route('/api/deals', methods=['POST'])
 def create_deal():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    d = request.json or {}
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db); d=request.json or {}
     try:
-        db.execute('''INSERT INTO deals (org_id, deal_name, property_address, buyer_name, buyer_email,
-                                         seller_name, seller_email, purchase_price, earnest_money,
-                                         closing_date, commission_amount, deal_status, notes)
-                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-            (user['org_id'], d.get('deal_name'), d.get('property_address'),
-             d.get('buyer_name'), d.get('buyer_email'), d.get('seller_name'), d.get('seller_email'),
-             d.get('purchase_price'), d.get('earnest_money'), d.get('closing_date'),
-             d.get('commission_amount'), d.get('deal_status', 'lead'), d.get('notes')))
-        db.commit()
-        deal = db.execute('SELECT * FROM deals WHERE org_id=? ORDER BY id DESC LIMIT 1', (user['org_id'],)).fetchone()
-        db.close()
-        return jsonify(dict(deal)), 201
-    except Exception as e:
-        db.close()
-        return jsonify({'error': str(e)}), 400
+        db.execute('INSERT INTO deals (org_id,deal_name,property_address,buyer_name,buyer_email,seller_name,seller_email,purchase_price,earnest_money,closing_date,commission_amount,deal_status,notes,source,session_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+            (user['org_id'],d.get('deal_name'),d.get('property_address'),d.get('buyer_name'),d.get('buyer_email'),
+             d.get('seller_name'),d.get('seller_email'),d.get('purchase_price'),d.get('earnest_money'),d.get('closing_date'),
+             d.get('commission_amount'),d.get('deal_status','lead'),d.get('notes'),d.get('source','manual'),d.get('session_id'))); db.commit()
+        deal=db.execute('SELECT * FROM deals WHERE org_id=? ORDER BY id DESC LIMIT 1',(user['org_id'],)).fetchone()
+        db.close(); return jsonify(dict(deal)),201
+    except Exception as e: db.close(); return jsonify({'error':str(e)}),400
 
 @app.route('/api/deals/<int:deal_id>', methods=['PUT'])
 def update_deal(deal_id):
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    deal = db.execute('SELECT * FROM deals WHERE id=? AND org_id=?', (deal_id, user['org_id'])).fetchone()
-    if not deal:
-        db.close()
-        return jsonify({'error': 'Not found'}), 404
-    d = request.json or {}
-    db.execute('''UPDATE deals SET deal_name=?, property_address=?, buyer_name=?, buyer_email=?,
-                  seller_name=?, seller_email=?, purchase_price=?, earnest_money=?,
-                  closing_date=?, commission_amount=?, deal_status=?, notes=?, updated_at=CURRENT_TIMESTAMP
-                  WHERE id=?''',
-        (d.get('deal_name', deal['deal_name']), d.get('property_address', deal['property_address']),
-         d.get('buyer_name', deal['buyer_name']), d.get('buyer_email', deal['buyer_email']),
-         d.get('seller_name', deal['seller_name']), d.get('seller_email', deal['seller_email']),
-         d.get('purchase_price', deal['purchase_price']), d.get('earnest_money', deal['earnest_money']),
-         d.get('closing_date', deal['closing_date']), d.get('commission_amount', deal['commission_amount']),
-         d.get('deal_status', deal['deal_status']), d.get('notes', deal['notes']), deal_id))
-    db.commit()
-    deal = db.execute('SELECT * FROM deals WHERE id=?', (deal_id,)).fetchone()
-    db.close()
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    deal=db.execute('SELECT * FROM deals WHERE id=? AND org_id=?',(deal_id,user['org_id'])).fetchone()
+    if not deal: db.close(); return jsonify({'error':'Not found'}),404
+    d=request.json or {}
+    db.execute('UPDATE deals SET deal_name=?,property_address=?,buyer_name=?,buyer_email=?,seller_name=?,seller_email=?,purchase_price=?,earnest_money=?,closing_date=?,commission_amount=?,deal_status=?,notes=?,updated_at=CURRENT_TIMESTAMP WHERE id=?',
+        (d.get('deal_name',deal['deal_name']),d.get('property_address',deal['property_address']),d.get('buyer_name',deal['buyer_name']),d.get('buyer_email',deal['buyer_email']),
+         d.get('seller_name',deal['seller_name']),d.get('seller_email',deal['seller_email']),d.get('purchase_price',deal['purchase_price']),d.get('earnest_money',deal['earnest_money']),
+         d.get('closing_date',deal['closing_date']),d.get('commission_amount',deal['commission_amount']),d.get('deal_status',deal['deal_status']),d.get('notes',deal['notes']),deal_id))
+    db.commit(); deal=db.execute('SELECT * FROM deals WHERE id=?',(deal_id,)).fetchone(); db.close()
     return jsonify(dict(deal))
 
 @app.route('/api/deals/<int:deal_id>', methods=['DELETE'])
 def delete_deal(deal_id):
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    deal = db.execute('SELECT * FROM deals WHERE id=? AND org_id=?', (deal_id, user['org_id'])).fetchone()
-    if not deal:
-        db.close()
-        return jsonify({'error': 'Not found'}), 404
-    db.execute('DELETE FROM deals WHERE id=?', (deal_id,))
-    db.commit()
-    db.close()
-    return jsonify({'success': True})
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    deal=db.execute('SELECT * FROM deals WHERE id=? AND org_id=?',(deal_id,user['org_id'])).fetchone()
+    if not deal: db.close(); return jsonify({'error':'Not found'}),404
+    db.execute('DELETE FROM deals WHERE id=?',(deal_id,)); db.commit(); db.close()
+    return jsonify({'success':True})
 
 @app.route('/api/deals/<int:deal_id>/commission', methods=['POST'])
 def add_commission(deal_id):
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    deal = db.execute('SELECT * FROM deals WHERE id=? AND org_id=?', (deal_id, user['org_id'])).fetchone()
-    if not deal:
-        db.close()
-        return jsonify({'error': 'Not found'}), 404
-    d = request.json or {}
-    db.execute('INSERT INTO deal_commissions (deal_id, user_id, commission_amount) VALUES (?,?,?)',
-        (deal_id, d.get('user_id'), d.get('commission_amount')))
-    db.commit()
-    comm = db.execute('SELECT * FROM deal_commissions WHERE deal_id=? ORDER BY id DESC LIMIT 1', (deal_id,)).fetchone()
-    db.close()
-    return jsonify(dict(comm)), 201
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    deal=db.execute('SELECT * FROM deals WHERE id=? AND org_id=?',(deal_id,user['org_id'])).fetchone()
+    if not deal: db.close(); return jsonify({'error':'Not found'}),404
+    d=request.json or {}
+    db.execute('INSERT INTO deal_commissions (deal_id,user_id,commission_amount) VALUES (?,?,?)',(deal_id,d.get('user_id'),d.get('commission_amount'))); db.commit()
+    comm=db.execute('SELECT * FROM deal_commissions WHERE deal_id=? ORDER BY id DESC LIMIT 1',(deal_id,)).fetchone()
+    db.close(); return jsonify(dict(comm)),201
 
-# ─── TEAM ───
+@app.route('/api/deals/from-chat/<bot_token>', methods=['POST'])
+def deal_from_chat(bot_token):
+    db=get_db(); bot=db.execute('SELECT * FROM bots WHERE token=?',(bot_token,)).fetchone()
+    if not bot: db.close(); return jsonify({'error':'Bot not found'}),404
+    org=db.execute('SELECT * FROM organizations WHERE id=?',(bot['org_id'],)).fetchone()
+    owner=db.execute('SELECT * FROM users WHERE id=?',(org['owner_id'],)).fetchone()
+    d=request.json or {}; messages=d.get('messages',[])
+    deal_data={'deal_name':d.get('deal_name',''),'property_address':d.get('property_address',''),
+               'buyer_name':d.get('buyer_name',''),'buyer_email':d.get('buyer_email',''),
+               'purchase_price':d.get('purchase_price'),'notes':d.get('notes',''),'session_id':d.get('session_id','')}
+    if messages and not deal_data['deal_name']:
+        conv='\n'.join(f"{m['role'].upper()}: {m['content']}" for m in messages[-20:])
+        try:
+            raw=openai_call([{'role':'system','content':'Extract deal info from this chat. Return ONLY valid JSON with keys: deal_name, property_address, buyer_name, buyer_email, purchase_price, notes. deal_name like "Inquiry: OLCC Producer License". No other text.'},{'role':'user','content':conv}],max_tokens=300)
+            ext=json.loads(re.sub(r'```[a-z]*','',raw).strip())
+            for k in deal_data:
+                if not deal_data[k] and ext.get(k): deal_data[k]=ext[k]
+        except Exception as e: print(f'[deal-from-chat] {e}')
+    if not deal_data['deal_name']: deal_data['deal_name']=f'Chat Inquiry — {datetime.datetime.now().strftime("%b %d %Y")}'
+    db.execute('INSERT INTO deals (org_id,deal_name,property_address,buyer_name,buyer_email,purchase_price,notes,deal_status,source,session_id) VALUES (?,?,?,?,?,?,?,?,?,?)',
+        (bot['org_id'],deal_data['deal_name'],deal_data['property_address'],deal_data['buyer_name'],deal_data['buyer_email'],deal_data['purchase_price'],deal_data['notes'],'lead','chat',deal_data['session_id'])); db.commit()
+    deal_id=db.execute('SELECT last_insert_rowid()').fetchone()[0]
+    if deal_data['buyer_name'] or deal_data['buyer_email']:
+        db.execute('INSERT INTO leads (bot_id,name,email,notes,status) VALUES (?,?,?,?,?)',
+            (bot['id'],deal_data['buyer_name'],deal_data['buyer_email'],f'From chat: {deal_data["deal_name"]}','new')); db.commit()
+    db.close()
+    link=f'{BASE_URL}/dashboard?deal={deal_id}'
+    if owner:
+        send_email(owner['email'],f'New Chat Deal: {deal_data["deal_name"]}',
+            f'<h2>New deal from chat</h2><p><b>Deal:</b> {deal_data["deal_name"]}</p><p><b>Buyer:</b> {deal_data["buyer_name"] or "Unknown"} ({deal_data["buyer_email"] or "no email"})</p>'
+            f'<p><b>Item:</b> {deal_data["property_address"] or "—"}</p><p><a href="{link}" style="background:#7c6af7;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;display:inline-block;">View Deal →</a></p>')
+    return jsonify({'success':True,'deal_id':deal_id,'dashboard_link':link})
+
+@app.route('/api/generate-contract-for-deal/<int:deal_id>', methods=['POST'])
+def generate_contract_for_deal(deal_id):
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    deal=db.execute('SELECT * FROM deals WHERE id=? AND org_id=?',(deal_id,user['org_id'])).fetchone()
+    if not deal: db.close(); return jsonify({'error':'Not found'}),404
+    transcript=''
+    if deal['session_id']:
+        msgs=db.execute('SELECT role,message FROM conversations WHERE session_id=? ORDER BY created_at',(deal['session_id'],)).fetchall()
+        if msgs: transcript='\n'.join(f"{m['role'].upper()}: {m['message']}" for m in msgs)
+    prompt=f"""Generate a complete professional contract.
+Deal: {deal['deal_name'] or 'N/A'}
+Item/Property: {deal['property_address'] or 'N/A'}
+Buyer: {deal['buyer_name'] or 'Unknown'} ({deal['buyer_email'] or 'no email'})
+Seller: {deal['seller_name'] or 'Unknown'} ({deal['seller_email'] or 'no email'})
+Price: {'$'+str(deal['purchase_price']) if deal['purchase_price'] else 'TBD'}
+Earnest Money: {'$'+str(deal['earnest_money']) if deal['earnest_money'] else 'N/A'}
+Closing Date: {deal['closing_date'] or 'TBD'}
+Notes: {deal['notes'] or 'None'}
+{('Chat Context:\n'+transcript[:2000]) if transcript else ''}
+Today: {datetime.datetime.now().strftime('%B %d, %Y')}
+Include: parties, item description, price/payment, conditions, closing, signatures."""
+    try: text=openai_call([{'role':'user','content':prompt}],max_tokens=3000)
+    except Exception as e: db.close(); return jsonify({'error':str(e)}),500
+    fp=os.path.join(DOCS_DIR,f'contract_deal{deal_id}_{int(time.time())}.txt')
+    with open(fp,'w') as fh: fh.write(text)
+    db.execute('INSERT INTO generated_documents (org_id,doc_type,title,data_json,file_path,status) VALUES (?,?,?,?,?,?)',
+        (user['org_id'],'contract',f'Contract — {deal["deal_name"]}',json.dumps(dict(deal)),fp,'draft')); db.commit()
+    doc=db.execute('SELECT * FROM generated_documents WHERE org_id=? ORDER BY id DESC LIMIT 1',(user['org_id'],)).fetchone()
+    db.close(); return jsonify({'success':True,'doc_id':doc['id'],'content':text}),201
+
 @app.route('/api/team', methods=['GET'])
 def get_team():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    team = db.execute('SELECT id, email, name, role, created_at FROM users WHERE org_id=?', (user['org_id'],)).fetchall()
-    invites = db.execute("SELECT * FROM invitations WHERE org_id=? AND accepted=0", (user['org_id'],)).fetchall()
-    db.close()
-    return jsonify({'members': [dict(t) for t in team], 'pending': [dict(i) for i in invites]})
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    team=db.execute('SELECT id,email,name,role,created_at FROM users WHERE org_id=?',(user['org_id'],)).fetchall()
+    invites=db.execute("SELECT * FROM invitations WHERE org_id=? AND accepted=0",(user['org_id'],)).fetchall()
+    db.close(); return jsonify({'members':[dict(t) for t in team],'pending':[dict(i) for i in invites]})
 
 @app.route('/api/team/invite', methods=['POST'])
 def invite_team():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    if user['role'] not in ('owner', 'admin'):
-        db.close()
-        return jsonify({'error': 'Must be org owner'}), 403
-    org = db.execute('SELECT * FROM organizations WHERE id=?', (user['org_id'],)).fetchone()
-    d = request.json or {}
-    invite_email = (d.get('email') or '').lower().strip()
-    if not invite_email:
-        db.close()
-        return jsonify({'error': 'Email required'}), 400
-    tok = secrets.token_hex(20)
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    if user['role'] not in ('owner','admin'): db.close(); return jsonify({'error':'Must be org owner'}),403
+    org=db.execute('SELECT * FROM organizations WHERE id=?',(user['org_id'],)).fetchone()
+    d=request.json or {}; invite_email=(d.get('email') or '').lower().strip()
+    if not invite_email: db.close(); return jsonify({'error':'Email required'}),400
+    tok=secrets.token_hex(20)
     try:
-        db.execute('INSERT INTO invitations (org_id, email, role, token) VALUES (?,?,?,?)',
-            (user['org_id'], invite_email, d.get('role', 'agent'), tok))
-        db.commit()
-        link = f'{BASE_URL}/accept-invite?token={tok}'
-        send_email(invite_email, f"You're invited to {org['name']} on Peekbot",
-            f'''<h2>Join {org['name']} on Peekbot</h2>
-            <p>You've been invited as a <b>{d.get("role","agent")}</b>.</p>
-            <p><a href="{link}" style="background:#7c6af7;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;">Accept Invitation</a></p>
-            <p>Or copy: {link}</p>''')
-        db.close()
-        return jsonify({'success': True})
-    except Exception as e:
-        db.close()
-        return jsonify({'error': str(e)}), 400
+        db.execute('INSERT INTO invitations (org_id,email,role,token) VALUES (?,?,?,?)',(user['org_id'],invite_email,d.get('role','agent'),tok)); db.commit()
+        link=f'{BASE_URL}/accept-invite?token={tok}'
+        send_email(invite_email,f"You're invited to {org['name']} on Peekbot",f'<h2>Join {org["name"]}</h2><p>Role: <b>{d.get("role","agent")}</b></p><p><a href="{link}">Accept</a></p>')
+        db.close(); return jsonify({'success':True})
+    except Exception as e: db.close(); return jsonify({'error':str(e)}),400
 
 @app.route('/api/team/accept-invite', methods=['POST'])
 def accept_invitation():
-    d = request.json or {}
-    tok      = d.get('token', '')
-    email    = (d.get('email') or '').lower().strip()
-    password = d.get('password', '')
-    name     = d.get('name', '').strip()
-    db = get_db()
-    invite = db.execute('SELECT * FROM invitations WHERE token=? AND accepted=0', (tok,)).fetchone()
-    if not invite:
-        db.close()
-        return jsonify({'error': 'Invalid or expired invitation'}), 400
+    d=request.json or {}; tok=d.get('token',''); email=(d.get('email') or '').lower().strip()
+    password=d.get('password',''); name=d.get('name','').strip()
+    db=get_db(); invite=db.execute('SELECT * FROM invitations WHERE token=? AND accepted=0',(tok,)).fetchone()
+    if not invite: db.close(); return jsonify({'error':'Invalid or expired invitation'}),400
     try:
-        db.execute('INSERT INTO users (email, password, name, org_id, role) VALUES (?,?,?,?,?)',
-            (email, hash_pw(password), name, invite['org_id'], invite['role']))
-        db.commit()
-        user = db.execute('SELECT * FROM users WHERE email=?', (email,)).fetchone()
-        db.execute('UPDATE invitations SET accepted=1 WHERE token=?', (tok,))
-        db.commit()
-        db.close()
-        return jsonify({
-            'token': make_token(user['id'], user['email']),
-            'email': user['email'],
-            'name':  user['name'],
-            'plan':  'free',
-            'role':  user['role']
-        })
-    except Exception as e:
-        db.close()
-        return jsonify({'error': str(e)}), 400
+        db.execute('INSERT INTO users (email,password,name,org_id,role) VALUES (?,?,?,?,?)',(email,hash_pw(password),name,invite['org_id'],invite['role'])); db.commit()
+        user=db.execute('SELECT * FROM users WHERE email=?',(email,)).fetchone()
+        db.execute('UPDATE invitations SET accepted=1 WHERE token=?',(tok,)); db.commit(); db.close()
+        return jsonify({'token':make_token(user['id'],user['email']),'email':user['email'],'name':user['name'],'plan':'free','role':user['role']})
+    except Exception as e: db.close(); return jsonify({'error':str(e)}),400
 
 @app.route('/api/team/<int:member_id>', methods=['DELETE'])
 def remove_team_member(member_id):
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    if user['role'] not in ('owner', 'admin'):
-        db.close()
-        return jsonify({'error': 'Must be org owner'}), 403
-    member = db.execute('SELECT * FROM users WHERE id=? AND org_id=?', (member_id, user['org_id'])).fetchone()
-    if not member or member['role'] == 'owner':
-        db.close()
-        return jsonify({'error': 'Cannot remove this member'}), 400
-    db.execute('DELETE FROM users WHERE id=?', (member_id,))
-    db.commit()
-    db.close()
-    return jsonify({'success': True})
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    if user['role'] not in ('owner','admin'): db.close(); return jsonify({'error':'Must be org owner'}),403
+    member=db.execute('SELECT * FROM users WHERE id=? AND org_id=?',(member_id,user['org_id'])).fetchone()
+    if not member or member['role']=='owner': db.close(); return jsonify({'error':'Cannot remove this member'}),400
+    db.execute('DELETE FROM users WHERE id=?',(member_id,)); db.commit(); db.close()
+    return jsonify({'success':True})
 
-# ─── TEMPLATES ───
 @app.route('/api/templates', methods=['GET'])
 def get_templates():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    tmpl = db.execute('SELECT * FROM contract_templates WHERE org_id=?', (user['org_id'],)).fetchall()
-    db.close()
-    return jsonify([dict(t) for t in tmpl])
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    tmpl=db.execute('SELECT * FROM contract_templates WHERE org_id=?',(user['org_id'],)).fetchall()
+    db.close(); return jsonify([dict(t) for t in tmpl])
 
 @app.route('/api/templates', methods=['POST'])
 def upload_template():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file'}), 400
-    f = request.files['file']
-    if not f or not ('.' in f.filename and f.filename.rsplit('.',1)[1].lower() in ALLOWED_EXT):
-        return jsonify({'error': 'Invalid file type'}), 400
-    db = get_db()
-    user = get_user(uid, db)
-    fn  = secure_filename(f.filename)
-    fp  = os.path.join(UPLOAD_DIR, f"{user['org_id']}_{int(time.time())}_{fn}")
-    f.save(fp)
-    db.execute('INSERT INTO contract_templates (org_id, name, description, file_path, file_type, category) VALUES (?,?,?,?,?,?)',
-        (user['org_id'], request.form.get('name', fn), request.form.get('description',''),
-         fp, fn.rsplit('.',1)[1], request.form.get('category','general')))
-    db.commit()
-    tmpl = db.execute('SELECT * FROM contract_templates WHERE org_id=? ORDER BY id DESC LIMIT 1', (user['org_id'],)).fetchone()
-    db.close()
-    return jsonify(dict(tmpl)), 201
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    if 'file' not in request.files: return jsonify({'error':'No file'}),400
+    f=request.files['file']
+    if not f or not ('.' in f.filename and f.filename.rsplit('.',1)[1].lower() in ALLOWED_EXT): return jsonify({'error':'Invalid file type'}),400
+    db=get_db(); user=get_user(uid,db); fn=secure_filename(f.filename)
+    fp=os.path.join(UPLOAD_DIR,f"{user['org_id']}_{int(time.time())}_{fn}"); f.save(fp)
+    db.execute('INSERT INTO contract_templates (org_id,name,description,file_path,file_type,category) VALUES (?,?,?,?,?,?)',
+        (user['org_id'],request.form.get('name',fn),request.form.get('description',''),fp,fn.rsplit('.',1)[1],request.form.get('category','general'))); db.commit()
+    tmpl=db.execute('SELECT * FROM contract_templates WHERE org_id=? ORDER BY id DESC LIMIT 1',(user['org_id'],)).fetchone()
+    db.close(); return jsonify(dict(tmpl)),201
 
 @app.route('/api/templates/<int:tid>', methods=['DELETE'])
 def delete_template(tid):
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    tmpl = db.execute('SELECT * FROM contract_templates WHERE id=? AND org_id=?', (tid, user['org_id'])).fetchone()
-    if not tmpl:
-        db.close()
-        return jsonify({'error': 'Not found'}), 404
-    try:
-        os.remove(tmpl['file_path'])
-    except Exception:
-        pass
-    db.execute('DELETE FROM contract_templates WHERE id=?', (tid,))
-    db.commit()
-    db.close()
-    return jsonify({'success': True})
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    tmpl=db.execute('SELECT * FROM contract_templates WHERE id=? AND org_id=?',(tid,user['org_id'])).fetchone()
+    if not tmpl: db.close(); return jsonify({'error':'Not found'}),404
+    try: os.remove(tmpl['file_path'])
+    except: pass
+    db.execute('DELETE FROM contract_templates WHERE id=?',(tid,)); db.commit(); db.close()
+    return jsonify({'success':True})
 
-# ─── DOCUMENTS ───
 @app.route('/api/documents', methods=['GET'])
 def get_documents():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    docs = db.execute('SELECT * FROM generated_documents WHERE org_id=? ORDER BY created_at DESC', (user['org_id'],)).fetchall()
-    db.close()
-    return jsonify([dict(d) for d in docs])
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    docs=db.execute('SELECT * FROM generated_documents WHERE org_id=? ORDER BY created_at DESC',(user['org_id'],)).fetchall()
+    db.close(); return jsonify([dict(d) for d in docs])
 
 @app.route('/api/generate-contract', methods=['POST'])
 def generate_contract():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    d = request.json or {}
-    db = get_db()
-    user = get_user(uid, db)
-    data = d.get('data', {})
-    prompt = f"""Generate a professional contract:
-Title: {d.get('title','Contract')}
-Data: {json.dumps(data)}
-Return complete contract text only."""
-    try:
-        contract_text = openai_call([{'role':'user','content':prompt}], max_tokens=2000)
-    except Exception as e:
-        db.close()
-        return jsonify({'error': str(e)}), 500
-    fp = os.path.join(DOCS_DIR, f"contract_{int(time.time())}.txt")
-    with open(fp, 'w') as fh:
-        fh.write(contract_text)
-    db.execute('INSERT INTO generated_documents (org_id, doc_type, title, data_json, file_path, status) VALUES (?,?,?,?,?,?)',
-        (user['org_id'], 'contract', d.get('title','Contract'), json.dumps(data), fp, 'draft'))
-    db.commit()
-    doc = db.execute('SELECT * FROM generated_documents WHERE org_id=? ORDER BY id DESC LIMIT 1', (user['org_id'],)).fetchone()
-    db.close()
-    return jsonify({'success': True, 'doc_id': doc['id'], 'content': contract_text}), 201
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    d=request.json or {}; db=get_db(); user=get_user(uid,db); data=d.get('data',{})
+    prompt=f"Generate a professional contract:\nTitle: {d.get('title','Contract')}\nData: {json.dumps(data)}\nReturn complete contract text only."
+    try: text=openai_call([{'role':'user','content':prompt}],max_tokens=2000)
+    except Exception as e: db.close(); return jsonify({'error':str(e)}),500
+    fp=os.path.join(DOCS_DIR,f'contract_{int(time.time())}.txt')
+    with open(fp,'w') as fh: fh.write(text)
+    db.execute('INSERT INTO generated_documents (org_id,doc_type,title,data_json,file_path,status) VALUES (?,?,?,?,?,?)',
+        (user['org_id'],'contract',d.get('title','Contract'),json.dumps(data),fp,'draft')); db.commit()
+    doc=db.execute('SELECT * FROM generated_documents WHERE org_id=? ORDER BY id DESC LIMIT 1',(user['org_id'],)).fetchone()
+    db.close(); return jsonify({'success':True,'doc_id':doc['id'],'content':text}),201
 
 @app.route('/api/generate-invoice', methods=['POST'])
 def generate_invoice():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    d = request.json or {}
-    db = get_db()
-    user = get_user(uid, db)
-    data   = d.get('data', {})
-    amount = float(data.get('amount', 0))
-    tax    = float(data.get('tax_rate', 0))
-    total  = amount * (1 + tax/100)
-    inv_num = data.get('invoice_num', secrets.token_hex(4).upper())
-    text = f"""INVOICE #{inv_num}
-Date: {datetime.datetime.now().strftime('%B %d, %Y')}
-Due: {data.get('due_date','')}
-
-From: {user['name']}
-
-Bill To:
-{data.get('client_name','')}
-{data.get('client_email','')}
-
-{data.get('description','')}
-
-Subtotal: ${amount:.2f}
-Tax ({tax}%): ${amount*tax/100:.2f}
-TOTAL DUE: ${total:.2f}
-
-Terms: {data.get('terms','Net 30')}
-"""
-    fp = os.path.join(DOCS_DIR, f"invoice_{int(time.time())}.txt")
-    with open(fp, 'w') as fh:
-        fh.write(text)
-    db.execute('INSERT INTO generated_documents (org_id, doc_type, title, data_json, file_path, status) VALUES (?,?,?,?,?,?)',
-        (user['org_id'], 'invoice', f'Invoice #{inv_num}', json.dumps(data), fp, 'draft'))
-    db.commit()
-    doc = db.execute('SELECT * FROM generated_documents WHERE org_id=? ORDER BY id DESC LIMIT 1', (user['org_id'],)).fetchone()
-    db.close()
-    return jsonify({'success': True, 'doc_id': doc['id'], 'content': text, 'total': total}), 201
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    d=request.json or {}; db=get_db(); user=get_user(uid,db); data=d.get('data',{})
+    amount=float(data.get('amount',0)); tax=float(data.get('tax_rate',0)); total=amount*(1+tax/100)
+    inv_num=data.get('invoice_num',secrets.token_hex(4).upper())
+    text=f"INVOICE #{inv_num}\nDate: {datetime.datetime.now().strftime('%B %d, %Y')}\nDue: {data.get('due_date','')}\n\nFrom: {user['name']}\n\nBill To:\n{data.get('client_name','')}\n{data.get('client_email','')}\n\n{data.get('description','')}\n\nSubtotal: ${amount:.2f}\nTax ({tax}%): ${amount*tax/100:.2f}\nTOTAL DUE: ${total:.2f}\n\nTerms: {data.get('terms','Net 30')}\n"
+    fp=os.path.join(DOCS_DIR,f'invoice_{int(time.time())}.txt')
+    with open(fp,'w') as fh: fh.write(text)
+    db.execute('INSERT INTO generated_documents (org_id,doc_type,title,data_json,file_path,status) VALUES (?,?,?,?,?,?)',
+        (user['org_id'],'invoice',f'Invoice #{inv_num}',json.dumps(data),fp,'draft')); db.commit()
+    doc=db.execute('SELECT * FROM generated_documents WHERE org_id=? ORDER BY id DESC LIMIT 1',(user['org_id'],)).fetchone()
+    db.close(); return jsonify({'success':True,'doc_id':doc['id'],'content':text,'total':total}),201
 
 @app.route('/api/documents/<int:doc_id>/download', methods=['GET'])
 def download_document(doc_id):
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    doc = db.execute('SELECT * FROM generated_documents WHERE id=? AND org_id=?', (doc_id, user['org_id'])).fetchone()
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    doc=db.execute('SELECT * FROM generated_documents WHERE id=? AND org_id=?',(doc_id,user['org_id'])).fetchone()
     db.close()
-    if not doc: return jsonify({'error': 'Not found'}), 404
-    return send_from_directory(os.path.dirname(doc['file_path']),
-        os.path.basename(doc['file_path']), as_attachment=True)
+    if not doc: return jsonify({'error':'Not found'}),404
+    return send_from_directory(os.path.dirname(doc['file_path']),os.path.basename(doc['file_path']),as_attachment=True)
 
 @app.route('/api/documents/<int:doc_id>', methods=['DELETE'])
 def delete_document(doc_id):
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    doc = db.execute('SELECT * FROM generated_documents WHERE id=? AND org_id=?', (doc_id, user['org_id'])).fetchone()
-    if not doc:
-        db.close()
-        return jsonify({'error': 'Not found'}), 404
-    try:
-        os.remove(doc['file_path'])
-    except Exception:
-        pass
-    db.execute('DELETE FROM generated_documents WHERE id=?', (doc_id,))
-    db.commit()
-    db.close()
-    return jsonify({'success': True})
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    doc=db.execute('SELECT * FROM generated_documents WHERE id=? AND org_id=?',(doc_id,user['org_id'])).fetchone()
+    if not doc: db.close(); return jsonify({'error':'Not found'}),404
+    try: os.remove(doc['file_path'])
+    except: pass
+    db.execute('DELETE FROM generated_documents WHERE id=?',(doc_id,)); db.commit(); db.close()
+    return jsonify({'success':True})
 
-# ─── BILLING ───
 @app.route('/api/upgrade', methods=['POST'])
 def upgrade():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    db = get_db()
-    user = get_user(uid, db)
-    db.close()
-    d    = request.json or {}
-    plan = d.get('plan', 'pro')
-    price_id = STRIPE_PRO if plan == 'pro' else STRIPE_SUPER
-
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db); db.close()
+    d=request.json or {}; plan=d.get('plan','pro'); price_id=STRIPE_PRO if plan=='pro' else STRIPE_SUPER
     if STRIPE_SECRET and price_id:
         try:
-            sess = stripe_post('checkout/sessions', {
-                'payment_method_types[]': 'card',
-                'line_items[0][price]': price_id,
-                'line_items[0][quantity]': '1',
-                'mode': 'subscription',
-                'customer_email': user['email'],
-                'metadata[user_id]': str(uid),
-                'metadata[plan]': plan,
-                'success_url': f'{BASE_URL}/dashboard?upgraded=1',
-                'cancel_url':  f'{BASE_URL}/dashboard?upgrade_cancelled=1',
-            })
-            return jsonify({'url': sess['url']})
-        except Exception as e:
-            print(f'[stripe] {e}')
-
-    send_email(ADMIN_EMAIL, f'Upgrade Request: {plan}',
-        f'<p>User <b>{user["email"]}</b> wants to upgrade to <b>{plan}</b>.</p>'
-        f'<p>Manually update plan in DB: UPDATE users SET plan="{plan}" WHERE email="{user["email"]}"; </p>')
-    return jsonify({'message': 'Upgrade request sent. We\'ll be in touch within 24h.'})
+            sess=stripe_post('checkout/sessions',{'payment_method_types[]':'card','line_items[0][price]':price_id,'line_items[0][quantity]':'1','mode':'subscription','customer_email':user['email'],'metadata[user_id]':str(uid),'metadata[plan]':plan,'success_url':f'{BASE_URL}/dashboard?upgraded=1','cancel_url':f'{BASE_URL}/dashboard?upgrade_cancelled=1'})
+            return jsonify({'url':sess['url']})
+        except Exception as e: print(f'[stripe] {e}')
+    send_email(ADMIN_EMAIL,f'Upgrade: {plan}',f'<p>{user["email"]} wants {plan}</p>')
+    return jsonify({'message':"Upgrade request sent. We'll be in touch within 24h."})
 
 @app.route('/api/webhook/stripe', methods=['POST'])
 def stripe_webhook():
-    payload = request.get_data()
-    sig = request.headers.get('Stripe-Signature', '')
-    if STRIPE_WEBHOOK and not verify_stripe_sig(payload, sig):
-        return jsonify({'error': 'Invalid signature'}), 400
+    payload=request.get_data(); sig=request.headers.get('Stripe-Signature','')
+    if STRIPE_WEBHOOK and not verify_stripe_sig(payload,sig): return jsonify({'error':'Invalid signature'}),400
     try:
-        event = json.loads(payload)
-        if event['type'] == 'checkout.session.completed':
-            sess     = event['data']['object']
-            user_id  = int(sess.get('metadata', {}).get('user_id', 0))
-            plan     = sess.get('metadata', {}).get('plan', 'pro')
-            sub_id   = sess.get('subscription', '')
-            if user_id:
-                db = get_db()
-                db.execute('UPDATE users SET plan=?, stripe_sub_id=? WHERE id=?', (plan, sub_id, user_id))
-                db.commit()
-                db.close()
-        elif event['type'] == 'customer.subscription.deleted':
-            sub_id = event['data']['object']['id']
-            db = get_db()
-            db.execute("UPDATE users SET plan='free', stripe_sub_id=NULL WHERE stripe_sub_id=?", (sub_id,))
-            db.commit()
-            db.close()
-    except Exception as e:
-        print(f'[webhook] {e}')
-    return jsonify({'received': True})
+        event=json.loads(payload)
+        if event['type']=='checkout.session.completed':
+            sess=event['data']['object']; uid=int(sess.get('metadata',{}).get('user_id',0))
+            plan=sess.get('metadata',{}).get('plan','pro'); sub_id=sess.get('subscription','')
+            if uid:
+                db=get_db(); db.execute('UPDATE users SET plan=?,stripe_sub_id=? WHERE id=?',(plan,sub_id,uid)); db.commit(); db.close()
+        elif event['type']=='customer.subscription.deleted':
+            sub_id=event['data']['object']['id']
+            db=get_db(); db.execute("UPDATE users SET plan='free',stripe_sub_id=NULL WHERE stripe_sub_id=?",(sub_id,)); db.commit(); db.close()
+    except Exception as e: print(f'[webhook] {e}')
+    return jsonify({'received':True})
 
-# ─── SETUP CHAT ───
 @app.route('/api/setup-chat', methods=['POST'])
 def setup_chat():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    d = request.json or {}
-    messages = d.get('messages', [])
-    system = """You are Peekbot Setup, a friendly assistant helping configure an AI chat widget for a business.
-Collect these 3 things in order, one question at a time:
-1. Business name
-2. What the business does (1-2 sentences)
-3. Bot personality tone (Professional, Friendly, Expert, or Casual)
-
-Be brief, warm, and conversational. After you have all 3 pieces of information confirmed, output ONLY this JSON on the last line (no trailing text):
-{"done":true,"name":"<business name>","purpose":"<what they do>","tone":"<professional|friendly|expert|casual>"}
-
-Map any tone synonym to one of those 4 exact values."""
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    d=request.json or {}; messages=d.get('messages',[])
+    system="""You are Peekbot Setup. Collect 3 things one at a time: 1) Business name 2) What they do (1-2 sentences) 3) Tone (Professional/Friendly/Expert/Casual).
+After confirming all 3, output ONLY this JSON on the last line:
+{"done":true,"name":"<name>","purpose":"<purpose>","tone":"<professional|friendly|expert|casual>"}"""
     try:
-        reply = openai_call([{'role':'system','content':system}] + messages, max_tokens=250)
-        config = None
-        m = re.search(r'\{[^{}]*"done"\s*:\s*true[^{}]*\}', reply)
+        reply=openai_call([{'role':'system','content':system}]+messages,max_tokens=250)
+        config=None; m=re.search(r'\{[^{}]*"done"\s*:\s*true[^{}]*\}',reply)
         if m:
-            try:
-                config = json.loads(m.group())
-                reply  = reply[:m.start()].strip()
-            except Exception:
-                pass
-        return jsonify({'reply': reply, 'config': config})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            try: config=json.loads(m.group()); reply=reply[:m.start()].strip()
+            except: pass
+        return jsonify({'reply':reply,'config':config})
+    except Exception as e: return jsonify({'error':str(e)}),500
 
 @app.route('/api/feature-request', methods=['POST'])
 def feature_request():
-    uid = verify_token(request)
-    if not uid: return jsonify({'error': 'Unauthorized'}), 401
-    d = request.json or {}
-    db = get_db()
-    user = get_user(uid, db)
-    db.close()
-    send_email(ADMIN_EMAIL, f'Feature Request from {user["email"]}',
-        f'<pre>{json.dumps(d, indent=2)}</pre>')
-    return jsonify({'success': True})
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    d=request.json or {}; db=get_db(); user=get_user(uid,db); db.close()
+    send_email(ADMIN_EMAIL,f'Feature Request from {user["email"]}',f'<pre>{json.dumps(d,indent=2)}</pre>')
+    return jsonify({'success':True})
 
-# ─── PUBLIC CHAT ───
 @app.route('/api/chat/<bot_token>', methods=['POST'])
 def chat(bot_token):
-    if not rate_ok(bot_token, limit=100):
-        return jsonify({'error': 'Rate limit exceeded. Try again in a minute.'}), 429
-
-    db = get_db()
-    bot = db.execute('SELECT * FROM bots WHERE token=?', (bot_token,)).fetchone()
-    if not bot:
-        db.close()
-        return jsonify({'error': 'Bot not found'}), 404
-
-    org = db.execute('SELECT * FROM organizations WHERE id=?', (bot['org_id'],)).fetchone()
-    owner = db.execute('SELECT * FROM users WHERE id=?', (org['owner_id'],)).fetchone()
-    if owner and owner['plan'] == 'free':
-        count = monthly_msg_count(bot['id'], db)
-        if count >= FREE_MSG_LIMIT:
-            db.close()
-            return jsonify({'reply': f"I've reached my message limit for this month. Please contact the site owner to upgrade."})
-
-    d = request.json or {}
-    messages   = d.get('messages', [])
-    session_id = d.get('session_id') or secrets.token_hex(8)
-
+    if not rate_ok(bot_token,limit=100): return jsonify({'error':'Rate limit exceeded.'}),429
+    db=get_db(); bot=db.execute('SELECT * FROM bots WHERE token=?',(bot_token,)).fetchone()
+    if not bot: db.close(); return jsonify({'error':'Bot not found'}),404
+    org=db.execute('SELECT * FROM organizations WHERE id=?',(bot['org_id'],)).fetchone()
+    owner=db.execute('SELECT * FROM users WHERE id=?',(org['owner_id'],)).fetchone()
+    if owner and owner['plan']=='free' and monthly_msg_count(bot['id'],db)>=FREE_MSG_LIMIT:
+        db.close(); return jsonify({'reply':"I've reached my message limit. Please contact the site owner to upgrade."})
+    d=request.json or {}; messages=d.get('messages',[]); session_id=d.get('session_id') or secrets.token_hex(8)
     if messages:
-        last = messages[-1]
-        db.execute('INSERT INTO conversations (bot_id, session_id, role, message) VALUES (?,?,?,?)',
-            (bot['id'], session_id, last['role'], last['content'][:2000]))
-        db.commit()
+        last=messages[-1]
+        db.execute('INSERT INTO conversations (bot_id,session_id,role,message) VALUES (?,?,?,?)',(bot['id'],session_id,last['role'],last['content'][:2000])); db.commit()
+    knowledge=db.execute('SELECT content FROM knowledge_base WHERE org_id=? ORDER BY id DESC LIMIT 20',(bot['org_id'],)).fetchall()
+    kb_text='\n\n'.join(k['content'] for k in knowledge)
+    system=bot['system_prompt'] or 'You are a helpful assistant.'
+    if kb_text: system+=f'\n\n--- Knowledge Base ---\n{kb_text}\n--- End Knowledge ---'
+    system+="""
 
-    knowledge = db.execute('SELECT content FROM knowledge_base WHERE org_id=? ORDER BY id DESC LIMIT 15', (bot['org_id'],)).fetchall()
-    kb_text = '\n\n'.join(k['content'] for k in knowledge)
-    system = bot['system_prompt'] or 'You are a helpful assistant.'
-    if kb_text:
-        system += f'\n\n--- Knowledge Base ---\n{kb_text}\n--- End Knowledge ---'
+--- Deal Capture Instructions ---
+When a visitor expresses clear interest in purchasing or acquiring a specific listing/service/product:
+1. Collect their name and email naturally in conversation.
+2. Ask for key details (what they want, budget, timeline).
+3. Once you have name + email + item of interest, output this EXACTLY on its own line then continue:
+   DEAL_READY:{"buyer_name":"...","buyer_email":"...","deal_name":"...","property_address":"...","notes":"..."}
+Tell them a team member will follow up shortly.
+--- End Deal Capture ---"""
+    try: reply=openai_call([{'role':'system','content':system}]+messages)
+    except Exception as e: db.close(); return jsonify({'error':str(e)}),500
+    db.execute('INSERT INTO conversations (bot_id,session_id,role,message) VALUES (?,?,?,?)',(bot['id'],session_id,'assistant',reply)); db.commit(); db.close()
+    deal_link=None; m=re.search(r'DEAL_READY:(\{[^\n]+\})',reply)
+    if m:
+        try:
+            deal_data=json.loads(m.group(1)); deal_data['session_id']=session_id; deal_data['messages']=messages
+            def _bg():
+                try:
+                    req=urllib.request.Request(f'http://localhost:3005/api/deals/from-chat/{bot_token}',data=json.dumps(deal_data).encode(),headers={'Content-Type':'application/json'},method='POST')
+                    with urllib.request.urlopen(req,timeout=10) as r: res=json.loads(r.read()); print(f'[deal] id={res.get("deal_id")}')
+                except Exception as e: print(f'[deal] bg: {e}')
+            threading.Thread(target=_bg,daemon=True).start()
+            deal_link=f'{BASE_URL}/dashboard?deal=pending'
+            reply=re.sub(r'\nDEAL_READY:\{[^\n]+\}','',reply).strip()
+        except Exception as e: print(f'[deal-parse] {e}')
+    return jsonify({'reply':reply,'session_id':session_id,'deal_link':deal_link})
 
-    try:
-        reply = openai_call([{'role':'system','content':system}] + messages)
-    except Exception as e:
-        db.close()
-        return jsonify({'error': str(e)}), 500
-
-    db.execute('INSERT INTO conversations (bot_id, session_id, role, message) VALUES (?,?,?,?)',
-        (bot['id'], session_id, 'assistant', reply))
-    db.commit()
-    db.close()
-    return jsonify({'reply': reply, 'session_id': session_id})
-
-# ─── PUBLIC LEAD CAPTURE ───
 @app.route('/api/lead/<bot_token>', methods=['POST'])
 def capture_lead(bot_token):
-    db = get_db()
-    bot = db.execute('SELECT * FROM bots WHERE token=?', (bot_token,)).fetchone()
-    if not bot:
-        db.close()
-        return jsonify({'error': 'Bot not found'}), 404
-    d = request.json or {}
-    db.execute('INSERT INTO leads (bot_id, name, email, phone, notes, status) VALUES (?,?,?,?,?,?)',
-        (bot['id'], d.get('name'), d.get('email'), d.get('phone'), d.get('notes'), 'new'))
-    db.commit()
-    org   = db.execute('SELECT * FROM organizations WHERE id=?', (bot['org_id'],)).fetchone()
-    owner = db.execute('SELECT * FROM users WHERE id=?', (org['owner_id'],)).fetchone()
+    db=get_db(); bot=db.execute('SELECT * FROM bots WHERE token=?',(bot_token,)).fetchone()
+    if not bot: db.close(); return jsonify({'error':'Bot not found'}),404
+    d=request.json or {}
+    db.execute('INSERT INTO leads (bot_id,name,email,phone,notes,status) VALUES (?,?,?,?,?,?)',(bot['id'],d.get('name'),d.get('email'),d.get('phone'),d.get('notes'),'new')); db.commit()
+    org=db.execute('SELECT * FROM organizations WHERE id=?',(bot['org_id'],)).fetchone()
+    owner=db.execute('SELECT * FROM users WHERE id=?',(org['owner_id'],)).fetchone()
     if owner:
-        send_email(owner['email'], f'New lead from {bot["name"]} 🎉',
-            f'''<h2>New Lead!</h2>
-            <p><b>Name:</b> {d.get("name","N/A")}</p>
-            <p><b>Email:</b> {d.get("email","N/A")}</p>
-            <p><b>Phone:</b> {d.get("phone","N/A")}</p>
-            <p><a href="{BASE_URL}/dashboard">View in Dashboard →</a></p>''')
-    db.close()
-    return jsonify({'success': True})
+        send_email(owner['email'],f'New lead from {bot["name"]}',
+            f'<h2>New Lead!</h2><p><b>Name:</b> {d.get("name","N/A")}</p><p><b>Email:</b> {d.get("email","N/A")}</p><p><a href="{BASE_URL}/dashboard">View →</a></p>')
+    db.close(); return jsonify({'success':True})
 
-# ─── PUBLIC BOT CONFIG ───
 @app.route('/api/config/<bot_token>', methods=['GET'])
 def get_config(bot_token):
-    db = get_db()
-    bot = db.execute('SELECT id,name,greeting,color,lead_capture FROM bots WHERE token=?', (bot_token,)).fetchone()
+    db=get_db(); bot=db.execute('SELECT id,name,greeting,color,lead_capture FROM bots WHERE token=?',(bot_token,)).fetchone()
     db.close()
-    if not bot: return jsonify({'error': 'Not found'}), 404
+    if not bot: return jsonify({'error':'Not found'}),404
     return jsonify(dict(bot))
 
-# ─── EMBED SCRIPT ───
 @app.route('/embed.js')
 def embed_script():
-    script = r"""
-(function() {
+    script=r"""(function(){
 'use strict';
-var t = document.currentScript && document.currentScript.getAttribute('data-token');
-if (!t) return;
-var base = 'https://peekbot.cana.chat';
-var cfg = null, hist = [], sid = 'pb_' + Math.random().toString(36).substr(2, 9);
-var pos = document.currentScript.getAttribute('data-position') || 'right';
-
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-fetch(base + '/api/config/' + t).then(function(r){ return r.json(); }).then(function(c){
-  cfg = c;
-  inject();
-}).catch(function(){});
-
-function inject() {
-  var host = document.createElement('div');
-  host.id = 'peekbot-widget';
-  host.style.cssText = 'position:fixed;bottom:1.5rem;z-index:2147483647;' + (pos === 'left' ? 'left:1.5rem' : 'right:1.5rem');
-  document.body.appendChild(host);
-
-  var shadow = host.attachShadow({mode:'closed'});
-
-  var style = document.createElement('style');
-  style.textContent = [
-    ':host { all: initial; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; }',
-    '#pb-btn { width:52px;height:52px;border-radius:50%;background:'+cfg.color+';border:none;cursor:pointer;',
-    '  display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.25);',
-    '  color:white;font-size:1.4rem;transition:transform .2s; }',
-    '#pb-btn:hover { transform:scale(1.08); }',
-    '#pb-panel { position:absolute;bottom:4rem;' + (pos === 'left' ? 'left:0' : 'right:0') + ';',
-    '  width:320px;background:#fff;border-radius:16px;display:none;flex-direction:column;overflow:hidden;',
-    '  border:1px solid rgba(0,0,0,.1);max-height:480px;box-shadow:0 8px 40px rgba(0,0,0,.18); }',
-    '#pb-panel.open { display:flex; }',
-    '#pb-head { background:'+cfg.color+';padding:.85rem 1rem;display:flex;align-items:center;gap:.6rem;color:#fff; }',
-    '#pb-head-name { font-weight:600;font-size:.9rem;flex:1; }',
-    '#pb-close { background:none;border:none;color:rgba(255,255,255,.8);cursor:pointer;font-size:1.1rem;padding:0; }',
-    '#pb-msgs { flex:1;overflow-y:auto;padding:.85rem;display:flex;flex-direction:column;gap:.6rem;background:#f7f7f8; }',
-    '.pb-msg { display:flex;gap:.4rem;max-width:100%; }',
-    '.pb-msg.u { justify-content:flex-end; }',
-    '.pb-bubble { max-width:80%;padding:.55rem .8rem;border-radius:14px;font-size:.8rem;line-height:1.5;word-break:break-word; }',
-    '.pb-msg.b .pb-bubble { background:#fff;color:#111;border:1px solid #e5e5e5; }',
-    '.pb-msg.u .pb-bubble { background:'+cfg.color+';color:#fff; }',
-    '#pb-form { background:#fff;padding:.6rem .75rem;border-top:1px solid #f0f0f0;display:flex;gap:.4rem; }',
-    '#pb-input { flex:1;border:1px solid #e5e5e5;border-radius:20px;padding:.4rem .85rem;font-size:.8rem;outline:none; }',
-    '#pb-input:focus { border-color:'+cfg.color+'; }',
-    '#pb-send { width:32px;height:32px;border-radius:50%;background:'+cfg.color+';border:none;cursor:pointer;',
-    '  color:#fff;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0; }',
-    '.pb-typing { display:flex;gap:4px;align-items:center;padding:.4rem; }',
-    '.pb-dot { width:6px;height:6px;border-radius:50%;background:#999;animation:pb-bounce .8s infinite; }',
+var t=document.currentScript&&document.currentScript.getAttribute('data-token');
+if(!t)return;
+var base='https://peekbot.cana.chat',cfg=null,hist=[],sid='pb_'+Math.random().toString(36).substr(2,9);
+var pos=document.currentScript.getAttribute('data-position')||'right';
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+fetch(base+'/api/config/'+t).then(function(r){return r.json();}).then(function(c){cfg=c;inject();}).catch(function(){});
+function inject(){
+  var host=document.createElement('div');host.id='peekbot-widget';
+  host.style.cssText='position:fixed;bottom:1.5rem;z-index:2147483647;'+(pos==='left'?'left:1.5rem':'right:1.5rem');
+  document.body.appendChild(host);var shadow=host.attachShadow({mode:'closed'});
+  var style=document.createElement('style');
+  style.textContent=[
+    ':host{all:initial;font-family:system-ui,-apple-system,sans-serif;font-size:14px;}',
+    '#pb-btn{width:52px;height:52px;border-radius:50%;background:'+cfg.color+';border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.25);color:white;font-size:1.4rem;transition:transform .2s;}',
+    '#pb-btn:hover{transform:scale(1.08);}',
+    '#pb-panel{position:absolute;bottom:4rem;'+(pos==='left'?'left:0':'right:0')+';width:340px;background:#fff;border-radius:16px;display:none;flex-direction:column;overflow:hidden;border:1px solid rgba(0,0,0,.1);max-height:520px;box-shadow:0 8px 40px rgba(0,0,0,.18);}',
+    '#pb-panel.open{display:flex;}',
+    '#pb-head{background:'+cfg.color+';padding:.85rem 1rem;display:flex;align-items:center;gap:.6rem;color:#fff;}',
+    '#pb-head-name{font-weight:600;font-size:.9rem;flex:1;}',
+    '#pb-close{background:none;border:none;color:rgba(255,255,255,.8);cursor:pointer;font-size:1.1rem;padding:0;}',
+    '#pb-msgs{flex:1;overflow-y:auto;padding:.85rem;display:flex;flex-direction:column;gap:.6rem;background:#f7f7f8;}',
+    '.pb-msg{display:flex;gap:.4rem;max-width:100%;}',
+    '.pb-msg.u{justify-content:flex-end;}',
+    '.pb-bubble{max-width:82%;padding:.55rem .8rem;border-radius:14px;font-size:.8rem;line-height:1.5;word-break:break-word;}',
+    '.pb-msg.b .pb-bubble{background:#fff;color:#111;border:1px solid #e5e5e5;}',
+    '.pb-msg.u .pb-bubble{background:'+cfg.color+';color:#fff;}',
+    '.pb-deal-card{background:#f0fdf4;border:1.5px solid #22c55e;border-radius:12px;padding:.85rem 1rem;margin:.25rem 0;}',
+    '.pb-deal-title{font-weight:700;color:#15803d;font-size:.82rem;margin-bottom:.25rem;}',
+    '.pb-deal-sub{font-size:.75rem;color:#166534;margin-bottom:.5rem;}',
+    '.pb-deal-link{display:inline-block;background:#16a34a;color:white;padding:.4rem 1rem;border-radius:8px;text-decoration:none;font-size:.75rem;font-weight:600;}',
+    '.pb-deal-link:hover{background:#15803d;}',
+    '#pb-form{background:#fff;padding:.6rem .75rem;border-top:1px solid #f0f0f0;display:flex;gap:.4rem;}',
+    '#pb-input{flex:1;border:1px solid #e5e5e5;border-radius:20px;padding:.4rem .85rem;font-size:.8rem;outline:none;}',
+    '#pb-input:focus{border-color:'+cfg.color+';}',
+    '#pb-send{width:32px;height:32px;border-radius:50%;background:'+cfg.color+';border:none;cursor:pointer;color:#fff;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}',
+    '.pb-typing{display:flex;gap:4px;align-items:center;padding:.4rem;}',
+    '.pb-dot{width:6px;height:6px;border-radius:50%;background:#999;animation:pb-bounce .8s infinite;}',
     '.pb-dot:nth-child(2){animation-delay:.15s}.pb-dot:nth-child(3){animation-delay:.3s}',
     '@keyframes pb-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}',
   ].join('');
   shadow.appendChild(style);
-
-  var panel = document.createElement('div');
-  panel.id = 'pb-panel';
-  panel.innerHTML =
-    '<div id="pb-head">' +
-      '<div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:.9rem;">' + esc(cfg.name[0]) + '</div>' +
-      '<div id="pb-head-name">' + esc(cfg.name) + '</div>' +
-      '<button id="pb-close" aria-label="Close chat">✕</button>' +
-    '</div>' +
-    '<div id="pb-msgs" role="log" aria-live="polite"></div>' +
-    '<div id="pb-form">' +
-      '<input id="pb-input" type="text" placeholder="Type a message..." aria-label="Chat message"/>' +
-      '<button id="pb-send" aria-label="Send">➤</button>' +
-    '</div>';
-
-  var btn = document.createElement('button');
-  btn.id = 'pb-btn';
-  btn.setAttribute('aria-label', 'Open chat');
-  btn.innerHTML = '💬';
-
-  shadow.appendChild(panel);
-  shadow.appendChild(btn);
-
-  var msgs   = shadow.getElementById('pb-msgs');
-  var inp    = shadow.getElementById('pb-input');
-  var open   = false;
-
-  btn.addEventListener('click', function() {
-    open = !open;
-    panel.classList.toggle('open', open);
-    btn.innerHTML = open ? '✕' : '💬';
-    if (open) inp.focus();
-  });
-  shadow.getElementById('pb-close').addEventListener('click', function() {
-    open = false;
-    panel.classList.remove('open');
-    btn.innerHTML = '💬';
-  });
-  shadow.getElementById('pb-send').addEventListener('click', function() { send(inp.value); });
-  inp.addEventListener('keypress', function(e) { if (e.key === 'Enter') send(inp.value); });
-
-  var leadCaptureStep = 0, leadCaptureData = {};
-  var LEAD_TRIGGER = 3;
-
-  function add(text, role) {
-    var d = document.createElement('div');
-    d.className = 'pb-msg ' + (role === 'u' ? 'u' : 'b');
-    var bub = document.createElement('div');
-    bub.className = 'pb-bubble';
-    bub.textContent = text;
-    d.appendChild(bub);
-    msgs.appendChild(d);
-    msgs.scrollTop = msgs.scrollHeight;
-    return d;
+  var panel=document.createElement('div');panel.id='pb-panel';
+  panel.innerHTML='<div id="pb-head"><div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:.9rem;">'+esc(cfg.name[0])+'</div>'+
+    '<div id="pb-head-name">'+esc(cfg.name)+'</div><button id="pb-close">✕</button></div>'+
+    '<div id="pb-msgs" role="log" aria-live="polite"></div>'+
+    '<div id="pb-form"><input id="pb-input" type="text" placeholder="Type a message..."/><button id="pb-send">➤</button></div>';
+  var btn=document.createElement('button');btn.id='pb-btn';btn.innerHTML='💬';
+  shadow.appendChild(panel);shadow.appendChild(btn);
+  var msgs=shadow.getElementById('pb-msgs'),inp=shadow.getElementById('pb-input'),open=false;
+  btn.addEventListener('click',function(){open=!open;panel.classList.toggle('open',open);btn.innerHTML=open?'✕':'💬';if(open)inp.focus();});
+  shadow.getElementById('pb-close').addEventListener('click',function(){open=false;panel.classList.remove('open');btn.innerHTML='💬';});
+  shadow.getElementById('pb-send').addEventListener('click',function(){send(inp.value);});
+  inp.addEventListener('keypress',function(e){if(e.key==='Enter')send(inp.value);});
+  var leadStep=0,leadData={},LEAD_TRIGGER=3;
+  function add(text,role){
+    var d=document.createElement('div');d.className='pb-msg '+(role==='u'?'u':'b');
+    var bub=document.createElement('div');bub.className='pb-bubble';bub.textContent=text;
+    d.appendChild(bub);msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;
   }
-
-  function addTyping() {
-    var d = document.createElement('div');
-    d.className = 'pb-msg b';
-    d.id = 'pb-typing';
-    d.innerHTML = '<div class="pb-bubble pb-typing"><div class="pb-dot"></div><div class="pb-dot"></div><div class="pb-dot"></div></div>';
-    msgs.appendChild(d);
-    msgs.scrollTop = msgs.scrollHeight;
-    return d;
+  function addDealCard(name,link){
+    var d=document.createElement('div');d.className='pb-msg b';
+    var card=document.createElement('div');card.className='pb-deal-card';
+    card.innerHTML='<div class="pb-deal-title">🔑 Deal Created!</div><div class="pb-deal-sub">'+esc(name)+'</div><a class="pb-deal-link" href="'+esc(link)+'" target="_blank">View in Dashboard →</a>';
+    d.appendChild(card);msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;
   }
-
-  var botMsgCount = 0;
-  function handleBotReply(text) {
-    botMsgCount++;
-    add(text, 'b');
-    if (cfg.lead_capture && botMsgCount === LEAD_TRIGGER && leadCaptureStep === 0) {
-      setTimeout(function() { promptLeadCapture(); }, 800);
-    }
+  function addTyping(){
+    var d=document.createElement('div');d.className='pb-msg b';d.id='pb-typing';
+    d.innerHTML='<div class="pb-bubble pb-typing"><div class="pb-dot"></div><div class="pb-dot"></div><div class="pb-dot"></div></div>';
+    msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;
   }
-
-  function promptLeadCapture() {
-    leadCaptureStep = 1;
-    add("Before I forget — would you like me to have someone follow up with you? I can take your name and email.", 'b');
+  var botCount=0;
+  function handleReply(text,dealLink){
+    botCount++;add(text,'b');
+    if(dealLink&&dealLink.indexOf('deal=pending')===-1)setTimeout(function(){addDealCard('Your inquiry has been logged',dealLink);},800);
+    if(cfg.lead_capture&&botCount===LEAD_TRIGGER&&leadStep===0)setTimeout(promptLead,800);
   }
-
-  async function send(text) {
-    text = text.trim();
-    if (!text) return;
-    inp.value = '';
-
-    if (leadCaptureStep === 1) {
-      var lower = text.toLowerCase();
-      if (lower.includes('yes') || lower.includes('sure') || lower.includes('ok') || lower.includes('yeah')) {
-        leadCaptureStep = 2;
-        add(text, 'u');
-        add("Great! What's your name?", 'b');
-        return;
-      } else if (lower.includes('no') || lower.includes('nope') || lower.includes('skip')) {
-        leadCaptureStep = -1;
-        add(text, 'u');
-        add("No problem! What else can I help you with?", 'b');
-        return;
-      }
-    }
-    if (leadCaptureStep === 2) {
-      leadCaptureData.name = text;
-      leadCaptureStep = 3;
-      add(text, 'u');
-      add("Thanks " + esc(text) + "! And your email address?", 'b');
-      return;
-    }
-    if (leadCaptureStep === 3) {
-      leadCaptureData.email = text;
-      leadCaptureStep = 4;
-      add(text, 'u');
-      fetch(base + '/api/lead/' + t, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(leadCaptureData)
-      });
-      add("Got it! Someone will be in touch soon. Now, what else can I help with?", 'b');
-      return;
-    }
-
-    add(text, 'u');
-    hist.push({role: 'user', content: text});
-    var typing = addTyping();
-    inp.disabled = true;
-
-    try {
-      var res  = await fetch(base + '/api/chat/' + t, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({messages: hist, session_id: sid})
-      });
-      var data = await res.json();
-      typing.remove();
-      inp.disabled = false;
-      inp.focus();
-      var reply = data.reply || data.error || 'Something went wrong.';
-      hist.push({role: 'assistant', content: reply});
-      handleBotReply(reply);
-      if (data.session_id) sid = data.session_id;
-    } catch(e) {
-      typing.remove();
-      inp.disabled = false;
-      add('Connection error. Please try again.', 'b');
-    }
+  function promptLead(){leadStep=1;add("Want someone to follow up with you? I can take your name and email.",'b');}
+  async function send(text){
+    text=text.trim();if(!text)return;inp.value='';
+    if(leadStep===1){var low=text.toLowerCase();
+      if(low.match(/yes|sure|ok|yeah|please/)){leadStep=2;add(text,'u');add("Great! What's your name?",'b');return;}
+      else if(low.match(/no|nope|skip/)){leadStep=-1;add(text,'u');add("No problem! What else can I help with?",'b');return;}}
+    if(leadStep===2){leadData.name=text;leadStep=3;add(text,'u');add("Thanks "+esc(text)+"! And your email?",'b');return;}
+    if(leadStep===3){leadData.email=text;leadStep=4;add(text,'u');
+      fetch(base+'/api/lead/'+t,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(leadData)});
+      add("Got it! Someone will be in touch. What else can I help with?",'b');return;}
+    add(text,'u');hist.push({role:'user',content:text});
+    var typing=addTyping();inp.disabled=true;
+    try{
+      var res=await fetch(base+'/api/chat/'+t,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:hist,session_id:sid})});
+      var data=await res.json();typing.remove();inp.disabled=false;inp.focus();
+      var reply=data.reply||data.error||'Something went wrong.';
+      hist.push({role:'assistant',content:reply});handleReply(reply,data.deal_link);
+      if(data.session_id)sid=data.session_id;
+    }catch(e){typing.remove();inp.disabled=false;add('Connection error. Please try again.','b');}
   }
-
-  add(cfg.greeting || 'Hi! How can I help?', 'b');
+  add(cfg.greeting||'Hi! How can I help?','b');
 }
-})();
-"""
-    resp = Response(script, mimetype='application/javascript')
-    resp.headers['Cache-Control'] = 'public, max-age=300'
-    return resp
+})();"""
+    resp=Response(script,mimetype='application/javascript'); resp.headers['Cache-Control']='public, max-age=300'; return resp
 
-# ─── QUICKBOOKS ───
-def qb_get_token(org, db):
-    expires_at = org['qb_token_expires_at']
-    if expires_at:
+def qb_get_token(org,db):
+    ea=org['qb_token_expires_at']
+    if ea:
         try:
-            exp = datetime.datetime.fromisoformat(expires_at)
-            if datetime.datetime.utcnow() < exp - datetime.timedelta(minutes=5):
-                return org['qb_access_token']
-        except Exception:
-            pass
-    credentials = base64.b64encode(f'{QB_CLIENT_ID}:{QB_CLIENT_SECRET}'.encode()).decode()
-    data = urllib.parse.urlencode({
-        'grant_type': 'refresh_token',
-        'refresh_token': org['qb_refresh_token']
-    }).encode()
-    req = urllib.request.Request(
-        'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer',
-        data=data,
-        headers={
-            'Authorization': f'Basic {credentials}',
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json'
-        }
-    )
-    with urllib.request.urlopen(req) as resp:
-        tokens = json.loads(resp.read())
-    new_expires = (datetime.datetime.utcnow() + datetime.timedelta(seconds=tokens.get('expires_in', 3600))).isoformat()
-    new_refresh  = tokens.get('refresh_token', org['qb_refresh_token'])
-    db.execute('UPDATE organizations SET qb_access_token=?, qb_refresh_token=?, qb_token_expires_at=? WHERE id=?',
-               (tokens['access_token'], new_refresh, new_expires, org['id']))
-    db.commit()
+            exp=datetime.datetime.fromisoformat(ea)
+            if datetime.datetime.utcnow()<exp-datetime.timedelta(minutes=5): return org['qb_access_token']
+        except: pass
+    creds=base64.b64encode(f'{QB_CLIENT_ID}:{QB_CLIENT_SECRET}'.encode()).decode()
+    data=urllib.parse.urlencode({'grant_type':'refresh_token','refresh_token':org['qb_refresh_token']}).encode()
+    req=urllib.request.Request('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer',data=data,
+        headers={'Authorization':f'Basic {creds}','Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'})
+    with urllib.request.urlopen(req) as r: tokens=json.loads(r.read())
+    new_exp=(datetime.datetime.utcnow()+datetime.timedelta(seconds=tokens.get('expires_in',3600))).isoformat()
+    db.execute('UPDATE organizations SET qb_access_token=?,qb_refresh_token=?,qb_token_expires_at=? WHERE id=?',
+        (tokens['access_token'],tokens.get('refresh_token',org['qb_refresh_token']),new_exp,org['id'])); db.commit()
     return tokens['access_token']
-
 
 @app.route('/api/quickbooks/connect')
 def qb_connect():
-    token = request.args.get('token', '')
-    try:
-        jwt.decode(token, SECRET, algorithms=['HS256'])
-    except Exception:
-        return jsonify({'error': 'Unauthorized'}), 401
-    state = base64.urlsafe_b64encode(json.dumps({'token': token}).encode()).decode()
-    params = urllib.parse.urlencode({
-        'client_id': QB_CLIENT_ID,
-        'scope': 'com.intuit.quickbooks.accounting',
-        'redirect_uri': QB_REDIRECT_URI,
-        'response_type': 'code',
-        'access_type': 'offline',
-        'state': state
-    })
+    token=request.args.get('token','')
+    try: jwt.decode(token,SECRET,algorithms=['HS256'])
+    except: return jsonify({'error':'Unauthorized'}),401
+    state=base64.urlsafe_b64encode(json.dumps({'token':token}).encode()).decode()
+    params=urllib.parse.urlencode({'client_id':QB_CLIENT_ID,'scope':'com.intuit.quickbooks.accounting','redirect_uri':QB_REDIRECT_URI,'response_type':'code','access_type':'offline','state':state})
     return redirect(f'https://appcenter.intuit.com/connect/oauth2?{params}')
-
 
 @app.route('/api/quickbooks/callback')
 def qb_callback():
-    error = request.args.get('error', '')
-    if error:
-        return redirect('/?qb_error=1')
-    code     = request.args.get('code', '')
-    state    = request.args.get('state', '')
-    realm_id = request.args.get('realmId', '')
+    if request.args.get('error'): return redirect('/?qb_error=1')
+    code=request.args.get('code',''); state=request.args.get('state',''); realm_id=request.args.get('realmId','')
     try:
-        state_data = json.loads(base64.urlsafe_b64decode(state + '=='))
-        token = state_data['token']
-        payload = jwt.decode(token, SECRET, algorithms=['HS256'])
-        user_id = payload['user_id']
-    except Exception:
-        return redirect('/?qb_error=1')
-    credentials = base64.b64encode(f'{QB_CLIENT_ID}:{QB_CLIENT_SECRET}'.encode()).decode()
-    data = urllib.parse.urlencode({
-        'grant_type': 'authorization_code',
-        'code': code,
-        'redirect_uri': QB_REDIRECT_URI
-    }).encode()
+        sd=json.loads(base64.urlsafe_b64decode(state+'==')); payload=jwt.decode(sd['token'],SECRET,algorithms=['HS256']); user_id=payload['user_id']
+    except: return redirect('/?qb_error=1')
+    creds=base64.b64encode(f'{QB_CLIENT_ID}:{QB_CLIENT_SECRET}'.encode()).decode()
+    data=urllib.parse.urlencode({'grant_type':'authorization_code','code':code,'redirect_uri':QB_REDIRECT_URI}).encode()
     try:
-        req = urllib.request.Request(
-            'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer',
-            data=data,
-            headers={
-                'Authorization': f'Basic {credentials}',
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept': 'application/json'
-            }
-        )
-        with urllib.request.urlopen(req) as resp:
-            tokens = json.loads(resp.read())
-    except Exception as e:
-        return redirect(f'/?qb_error=1')
-    expires_at = (datetime.datetime.utcnow() + datetime.timedelta(seconds=tokens.get('expires_in', 3600))).isoformat()
-    db = get_db()
-    user = get_user(user_id, db)
-    db.execute('''UPDATE organizations SET qb_realm_id=?, qb_access_token=?, qb_refresh_token=?, qb_token_expires_at=?
-                  WHERE id=?''',
-               (realm_id, tokens['access_token'], tokens['refresh_token'], expires_at, user['org_id']))
-    db.commit()
-    db.close()
+        req=urllib.request.Request('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer',data=data,
+            headers={'Authorization':f'Basic {creds}','Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'})
+        with urllib.request.urlopen(req) as r: tokens=json.loads(r.read())
+    except: return redirect('/?qb_error=1')
+    exp=(datetime.datetime.utcnow()+datetime.timedelta(seconds=tokens.get('expires_in',3600))).isoformat()
+    db=get_db(); user=get_user(user_id,db)
+    db.execute('UPDATE organizations SET qb_realm_id=?,qb_access_token=?,qb_refresh_token=?,qb_token_expires_at=? WHERE id=?',
+        (realm_id,tokens['access_token'],tokens['refresh_token'],exp,user['org_id'])); db.commit(); db.close()
     return redirect('/?qb_connected=1')
-
 
 @app.route('/api/quickbooks/status')
 def qb_status():
-    uid = verify_token(request)
-    if not uid:
-        return jsonify({'error': 'Unauthorized'}), 401
-    db  = get_db()
-    user = get_user(uid, db)
-    org  = db.execute('SELECT qb_realm_id, qb_access_token FROM organizations WHERE id=?', (user['org_id'],)).fetchone()
-    db.close()
-    connected = bool(org and org['qb_access_token'] and org['qb_realm_id'])
-    return jsonify({'connected': connected, 'realm_id': org['qb_realm_id'] if org else None})
-
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    org=db.execute('SELECT qb_realm_id,qb_access_token FROM organizations WHERE id=?',(user['org_id'],)).fetchone()
+    db.close(); return jsonify({'connected':bool(org and org['qb_access_token'] and org['qb_realm_id']),'realm_id':org['qb_realm_id'] if org else None})
 
 @app.route('/api/quickbooks/sync', methods=['POST'])
 def qb_sync():
-    uid = verify_token(request)
-    if not uid:
-        return jsonify({'error': 'Unauthorized'}), 401
-    db   = get_db()
-    user = get_user(uid, db)
-    org  = db.execute('SELECT * FROM organizations WHERE id=?', (user['org_id'],)).fetchone()
-    if not org or not org['qb_access_token']:
-        db.close()
-        return jsonify({'error': 'QuickBooks not connected'}), 400
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    org=db.execute('SELECT * FROM organizations WHERE id=?',(user['org_id'],)).fetchone()
+    if not org or not org['qb_access_token']: db.close(); return jsonify({'error':'QuickBooks not connected'}),400
+    try: access_token=qb_get_token(org,db)
+    except Exception as e: db.close(); return jsonify({'error':f'Token refresh failed: {e}'}),502
+    query=urllib.parse.quote("SELECT * FROM Customer MAXRESULTS 100")
+    req=urllib.request.Request(f'https://quickbooks.api.intuit.com/v3/company/{org["qb_realm_id"]}/query?query={query}&minorversion=65',headers={'Authorization':f'Bearer {access_token}','Accept':'application/json'})
     try:
-        access_token = qb_get_token(org, db)
-    except Exception as e:
-        db.close()
-        return jsonify({'error': f'Token refresh failed: {e}'}), 502
-    realm_id = org['qb_realm_id']
-    query    = urllib.parse.quote("SELECT * FROM Customer MAXRESULTS 100")
-    req = urllib.request.Request(
-        f'https://quickbooks.api.intuit.com/v3/company/{realm_id}/query?query={query}&minorversion=65',
-        headers={
-            'Authorization': f'Bearer {access_token}',
-            'Accept': 'application/json'
-        }
-    )
-    try:
-        with urllib.request.urlopen(req) as resp:
-            qb_data = json.loads(resp.read())
-    except Exception as e:
-        db.close()
-        return jsonify({'error': f'QB API error: {e}'}), 502
-    customers = qb_data.get('QueryResponse', {}).get('Customer', [])
-    synced = 0
+        with urllib.request.urlopen(req) as r: qb_data=json.loads(r.read())
+    except Exception as e: db.close(); return jsonify({'error':f'QB API error: {e}'}),502
+    customers=qb_data.get('QueryResponse',{}).get('Customer',[])
+    synced=0
     for c in customers:
-        email = (c.get('PrimaryEmailAddr') or {}).get('Address', '').strip()
-        name  = c.get('DisplayName', '').strip()
-        if not email:
-            continue
-        existing = db.execute('SELECT id FROM leads WHERE email=? AND org_id=?', (email, user['org_id'])).fetchone()
-        if not existing:
-            db.execute('INSERT INTO leads (org_id, name, email, source, status, created_at) VALUES (?,?,?,?,?,?)',
-                       (user['org_id'], name, email, 'quickbooks', 'new', datetime.datetime.utcnow().isoformat()))
-            synced += 1
-    db.commit()
-    db.close()
-    return jsonify({'synced': synced, 'total': len(customers)})
-
+        email=(c.get('PrimaryEmailAddr') or {}).get('Address','').strip(); name=c.get('DisplayName','').strip()
+        if not email: continue
+        if not db.execute('SELECT id FROM leads WHERE email=? AND org_id=?',(email,user['org_id'])).fetchone():
+            db.execute('INSERT INTO leads (org_id,name,email,source,status,created_at) VALUES (?,?,?,?,?,?)',
+                (user['org_id'],name,email,'quickbooks','new',datetime.datetime.utcnow().isoformat())); synced+=1
+    db.commit(); db.close(); return jsonify({'synced':synced,'total':len(customers)})
 
 @app.route('/api/quickbooks/disconnect', methods=['POST'])
 def qb_disconnect():
-    uid = verify_token(request)
-    if not uid:
-        return jsonify({'error': 'Unauthorized'}), 401
-    db   = get_db()
-    user = get_user(uid, db)
-    db.execute('UPDATE organizations SET qb_realm_id=NULL, qb_access_token=NULL, qb_refresh_token=NULL, qb_token_expires_at=NULL WHERE id=?',
-               (user['org_id'],))
-    db.commit()
-    db.close()
-    return jsonify({'ok': True})
-
+    uid=verify_token(request)
+    if not uid: return jsonify({'error':'Unauthorized'}),401
+    db=get_db(); user=get_user(uid,db)
+    db.execute('UPDATE organizations SET qb_realm_id=NULL,qb_access_token=NULL,qb_refresh_token=NULL,qb_token_expires_at=NULL WHERE id=?',(user['org_id'],))
+    db.commit(); db.close(); return jsonify({'ok':True})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3005, debug=False)
