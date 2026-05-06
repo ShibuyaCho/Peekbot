@@ -900,7 +900,7 @@ function renderDeals(){
       '<td>'+(d.purchase_price?'$'+Number(d.purchase_price).toLocaleString():'—')+'</td>'+
       '<td><span class="status-badge status-'+(d.deal_status||'lead')+'">'+(d.deal_status||'lead')+'</span></td>'+
       '<td>'+(d.source==='chat'?'<span class="source-chat">Chat</span>':'<span style="font-size:.72rem;color:var(--muted);">Manual</span>')+'</td>'+
-      '<td><button class="btn btn-ghost btn-sm" onclick=\'openDealModal('+JSON.stringify(d).replace(/\'/g,"&#39;")+')\''>Edit</button></td></tr>').join('')+
+      '<td><button class="btn btn-ghost btn-sm" onclick="openDealById('+d.id+')">Edit</button></td></tr>').join('')+
     '</tbody></table></div>';
 }
 function openDealModal(deal){
@@ -1067,6 +1067,8 @@ async function disconnectQuickBooks(){
 }
 
 // UTILS
+function openDealById(id){const d=allDeals.find(x=>x.id===id);if(d)openDealModal(d);}
+function openLeadFromRow(el){try{openLead(JSON.parse(decodeURIComponent(el.dataset.lead)));}catch(e){}}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 </script>
